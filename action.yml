@@ -12,7 +12,7 @@ inputs:
     required: false
     type: string
   github_token:
-    description: 'GitHub token for authentication. Optional.'
+    description: 'GitHub token for authentication.'
     required: true
     type: string
     

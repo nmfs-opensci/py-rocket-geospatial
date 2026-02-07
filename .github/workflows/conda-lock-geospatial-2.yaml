@@ -104,9 +104,9 @@ jobs:
 
           git add conda-linux-64.lock
 
-          if [[ $(git ls-files --modified) ]]; then
+          if ! git diff --cached --quiet; then
             git config --global user.name 'actions-bot'
             git config --global user.email '58130806+actions-bot@users.noreply.github.com'
-            git commit --all --message "[bot] update conda lock (py-rocket-geospatial)"
+            git commit --message "[bot] update conda lock (py-rocket-geospatial)"
             git push
           fi
