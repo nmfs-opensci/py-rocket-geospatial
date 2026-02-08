@@ -1,0 +1,34 @@
+name: Docker Image Build and Push
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'action.yml'
+      - '.github/workflows/build-and-push.yml'
+      - 'Dockerfile'
+      - 'env-*.yml'
+      - 'environment.yml'
+      - 'install.R'
+      - 'apt.txt'
+      - 'Desktop/**'
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Use reusable action
+        uses: ./
+        with:
+          image_dir: .
+          image_name: ${{ github.event.repository.name }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
