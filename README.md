@@ -3,6 +3,12 @@
 [![Build and Push](https://github.com/nmfs-opensci/py-rocket-geospatial-2/actions/workflows/build-and-push.yml/badge.svg)](https://github.com/nmfs-opensci/py-rocket-geospatial-2/actions/workflows/build-and-push.yml)
 [![ghcr.io](https://img.shields.io/badge/ghcr.io-container--images%2Fpy--rocket--geospatial--2-blue?logo=docker)](https://github.com/nmfs-opensci/container-images/pkgs/container/container-images%2Fpy-rocket-geospatial-2)
 
+**Latest version:** `2026.02.08`
+
+```bash
+docker run -it --rm -p 8888:8888 ghcr.io/nmfs-opensci/container-images/py-rocket-geospatial-2:latest
+```
+
 This creates a base Python-R image with geospatial packages for Python and R. The Python environment is the Pangeo notebook environment + extra geospatial libraries (similar to CryoCloud). The R environment is Rocker geospatial plus a few other packages. The image also includes a linux Desktop with QGIS, CoastWatch Utilities, and Panoply.
 
 TeXLive and Quarto are installed along with MyST and JupyterBook.
