@@ -41,12 +41,16 @@ jobs:
 
       - name: Extract R packages with pinned versions
         run: |
+          # Extract CRAN repo URL from install.R
+          REPO_URL=$(grep -E '^repo <- ' install.R | sed 's/repo <- "\(.*\)"/\1/')
+          echo "Extracted CRAN repo URL: $REPO_URL"
+          
           # Create script to extract R packages
-          cat > extract_r_packages.sh << 'EOF'
+          cat > extract_r_packages.sh << EOF
           #!/bin/bash
           
           # Get R HOME
-          R_HOME=$(docker run --rm ghcr.io/nmfs-opensci/container-images/py-rocket-geospatial-2:latest R RHOME)
+          R_HOME=\$(docker run --rm ghcr.io/nmfs-opensci/container-images/py-rocket-geospatial-2:latest R RHOME)
           
           # Extract R packages with versions
           docker run --rm ghcr.io/nmfs-opensci/container-images/py-rocket-geospatial-2:latest \
@@ -55,8 +59,8 @@ jobs:
           lib_path <- "/usr/local/lib/R/site-library"
           packages <- installed.packages(lib.loc=lib_path)
           
-          # Get CRAN repo URL (similar to install.R format)
-          repo <- "https://p3m.dev/cran/__linux__/noble/2025-10-30"
+          # Get CRAN repo URL from install.R
+          repo <- "$REPO_URL"
           
           cat("#! /usr/local/bin/Rscript\n")
           cat("# Pinned R package versions\n")
