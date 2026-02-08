@@ -6,7 +6,35 @@ TeXLive and Quarto are installed along with MyST and JupyterBook.
 
 Python 3.11 is installed with a conda environment called notebook that is activated on opening the container. R 4.5.X is installed and operates separate from the conda notebook environment (conda is not on the PATH when using R). R can be used from RStudio or JupyterLab and the same R environment is used.
 
-See the documentation on [py-rocket-base](https://nmfs-opensci.github.io/py-rocket-base/) for information on the image structure and design.
+## Structure
+
+* The base infrastructure (Jupyter, Dask, Python install, conda env, R install, all the set ups around the user experience) are in [py-rocket-base](https://github.com/nmfs-opensci/py-rocket-base/). See the  [py-rocket-base documentation](https://nmfs-opensci.github.io/py-rocket-base/) for information on the base image structure and design.
+* py-rocket-geospatial-2 the Python scientific core packages and Python and R geospatial packages. Note the R core scientific packages are in py-rocket-base since rocker_verse is the base R.
+* py-rocket-geospatial-2 also installs QGIS, CoastWatch Utilities, and Panoply.
+
+### Customizing py-rocket-geospatial-2
+
+1. You can create a derivative image using py-rocket-geospatial-2 as the base. This will add packages to the conda and R environments.
+```
+FROM ghcr.io/nmfs-opensci/container-images/py-rocket-geospatial-2:2026.02.08
+
+USER root
+
+COPY . /tmp/
+RUN /pyrocket_scripts/install-conda-packages.sh /tmp/environment.yml || echo "install-conda-packages.sh failed" || true
+RUN /pyrocket_scripts/install-r-packages.sh /tmp/install.R || echo "install-r-package.sh failed" || true
+RUN rm -rf /tmp/*
+
+USER ${NB_USER}
+WORKDIR ${HOME}
+```
+
+2. You can use the https://github.com/nmfs-opensci/py-rocket-geospatial-2/Dockerfile as a template.
+
+3. Making your derivative image build automatically in GitHub.
+   - Copy `action.yaml` to the base of your repo
+   - Copy `.github/workflows/build-and-push.yml` into your repo and edit the `image-name`.
+   - Set up your repo to allow packages to be published to your location from your repo.
 
 ## Provenance
 
