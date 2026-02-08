@@ -15,6 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     # Only run if the triggering workflow succeeded or if manually triggered
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -32,108 +33,24 @@ jobs:
 
       - name: Extract Python packages with pinned versions
         run: |
-          # Run the container and export conda environment with explicit versions
           docker run --rm ghcr.io/nmfs-opensci/container-images/py-rocket-geospatial-2:latest \
             bash -c 'conda list -n notebook --export' > packages-python-pinned.yaml
-          
+
           echo "Python packages extracted to packages-python-pinned.yaml"
           head -20 packages-python-pinned.yaml
 
       - name: Extract R packages with pinned versions
         run: |
-          # Extract CRAN repo URL from install.R
-          REPO_URL=$(grep -E '^repo <- ' install.R | sed 's/repo <- "\(.*\)"/\1/')
-          echo "Extracted CRAN repo URL: $REPO_URL"
-          
-          # Create script to extract R packages
-          cat > extract_r_packages.sh << EOF
-          #!/bin/bash
-          
-          # Get R HOME
-          R_HOME=\$(docker run --rm ghcr.io/nmfs-opensci/container-images/py-rocket-geospatial-2:latest R RHOME)
-          
-          # Extract R packages with versions
-          docker run --rm ghcr.io/nmfs-opensci/container-images/py-rocket-geospatial-2:latest \
-            Rscript -e '
-          # Get installed packages from site-library (not user library)
-          lib_path <- "/usr/local/lib/R/site-library"
-          packages <- installed.packages(lib.loc=lib_path)
-          
-          # Get CRAN repo URL from install.R
-          repo <- "$REPO_URL"
-          
-          cat("#! /usr/local/bin/Rscript\n")
-          cat("# Pinned R package versions\n")
-          cat("# Generated automatically from container image\n")
-          cat("#\n")
-          cat("# NOTE: This file lists all installed packages with their versions.\n")
-          cat("# The version comments show what was installed in the container.\n")
-          cat("# To strictly pin versions, you could modify this script to use:\n")
-          cat("#   remotes::install_version(\"pkg_name\", version=\"X.Y.Z\", repos=repo)\n")
-          cat("# However, the CRAN snapshot repo below should provide similar packages.\n")
-          cat("#\n\n")
-          cat(sprintf("repo <- \"%s\"\n\n", repo))
-          
-          # Print check for library path
-          cat("# Check if the first library path is inside /home\n")
-          cat("install_lib <- .libPaths()[1]\n")
-          cat("if (grepl(\"^/home\", install_lib)) {\n")
-          cat("  stop(\"Error: Packages are being installed to /home, which will be removed in the final image. Exiting.\", call. = FALSE)\n")
-          cat("}\n\n")
-          
-          # Process each package
-          for (i in 1:nrow(packages)) {
-            pkg_name <- packages[i, "Package"]
-            pkg_version <- packages[i, "Version"]
-            
-            # Skip base R packages
-            priority <- packages[i, "Priority"]
-            if (!is.na(priority) && priority %in% c("base", "recommended")) {
-              next
-            }
-            
-            # Check if package is from GitHub (has RemoteType field)
-            pkg_desc_path <- file.path(lib_path, pkg_name, "DESCRIPTION")
-            if (file.exists(pkg_desc_path)) {
-              desc_lines <- readLines(pkg_desc_path)
-              remote_type_line <- grep("^RemoteType:", desc_lines, value = TRUE)
-              
-              if (length(remote_type_line) > 0 && grepl("github", remote_type_line, ignore.case = TRUE)) {
-                # Extract GitHub info
-                remote_username <- grep("^RemoteUsername:", desc_lines, value = TRUE)
-                remote_repo <- grep("^RemoteRepo:", desc_lines, value = TRUE)
-                remote_ref <- grep("^RemoteRef:", desc_lines, value = TRUE)
-                remote_sha <- grep("^RemoteSha:", desc_lines, value = TRUE)
-                
-                if (length(remote_username) > 0 && length(remote_repo) > 0) {
-                  username <- sub("^RemoteUsername:\\s*", "", remote_username)
-                  repo_name <- sub("^RemoteRepo:\\s*", "", remote_repo)
-                  
-                  if (length(remote_sha) > 0) {
-                    sha <- sub("^RemoteSha:\\s*", "", remote_sha)
-                    # Use short SHA (7 chars)
-                    sha_short <- substr(sha, 1, 7)
-                    cat(sprintf("remotes::install_github(\"%s/%s@%s\", upgrade=FALSE) # %s\n", 
-                                username, repo_name, sha_short, pkg_version))
-                  } else {
-                    cat(sprintf("remotes::install_github(\"%s/%s\", upgrade=FALSE) # %s\n", 
-                                username, repo_name, pkg_version))
-                  }
-                  next
-                }
-              }
-            }
-            
-            # Regular CRAN package - use remotes::install_version for strict pinning
-            cat(sprintf("remotes::install_version(\"%s\", version=\"%s\", repos=repo, upgrade=FALSE)\n", pkg_name, pkg_version))
-          }
-          ' > packages-r-pinned.R
-          EOF
-          
-          chmod +x extract_r_packages.sh
-          ./extract_r_packages.sh
-          rm extract_r_packages.sh
-          
+          IMAGE=ghcr.io/nmfs-opensci/container-images/py-rocket-geospatial-2:latest
+
+          # Write output into the repo workspace (mounted at /work inside container)
+          docker run --rm \
+            -v "$PWD:/work" -w /work \
+            "$IMAGE" \
+            Rscript .github/scripts/extract_pins_r.R \
+              /usr/local/lib/R/site-library \
+              /work/packages-r-pinned.R
+
           echo "R packages extracted to packages-r-pinned.R"
           head -30 packages-r-pinned.R
 
@@ -141,11 +58,9 @@ jobs:
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          
-          # Check if files have changes or are new
+
           git add packages-python-pinned.yaml packages-r-pinned.R
-          
-          # Only commit if there are changes
+
           if ! git diff --staged --quiet; then
             git commit -m "Update pinned package versions from container image"
             git push
