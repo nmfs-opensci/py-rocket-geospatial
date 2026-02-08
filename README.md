@@ -15,7 +15,16 @@ Python 3.11 is installed with a conda environment called notebook that is activa
 * py-rocket-geospatial-2 the Python scientific core packages and Python and R geospatial packages. Note the R core scientific packages are in py-rocket-base since rocker_verse is the base R.
 * py-rocket-geospatial-2 also installs QGIS, CoastWatch Utilities, and Panoply.
 
-### Customizing py-rocket-geospatial-2
+## Customizing py-rocket-geospatial-2
+
+* edit the Python packages here `env-*.yml`
+* edit the R packages here `install.R`
+* update the QGIS, CoastWatch Utilities, and Panoply installs here `Dockerfile`
+* update the systems installs here `apt.txt`
+
+If the changes are core functionality, not scientific, put in an [issue in py-rocket-base](https://github.com/nmfs-opensci/py-rocket-base/issues).
+
+## Derivative images
 
 1. You can create a derivative image using py-rocket-geospatial-2 as the base. This will add packages to the conda and R environments.
 ```
@@ -34,7 +43,7 @@ WORKDIR ${HOME}
 
 2. You can use the https://github.com/nmfs-opensci/py-rocket-geospatial-2/Dockerfile as a template.
 
-3. Making your derivative image build automatically in GitHub.
+3. Making your derivative image build automatically in GitHub from your repo.
    - Copy `action.yaml` to the base of your repo
    - Copy `.github/workflows/build-and-push.yml` into your repo and edit the `image-name`.
    - Set up your repo to allow packages to be published to your location from your repo.
