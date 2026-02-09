@@ -94,7 +94,7 @@ WORKDIR ${HOME}
 2. You can use the https://github.com/nmfs-opensci/py-rocket-geospatial-2/Dockerfile as a template.
 
 3. Making your derivative image build automatically in GitHub from your repo.
-   - Copy `action.yaml` to the base of your repo
+   - Copy `.github/actions/build-and-push/action.yml` to the same location in your repo
    - Copy `.github/workflows/build-and-push.yml` into your repo and edit the `image-name`.
    - Set up your repo to allow packages to be published to your location from your repo.
 
