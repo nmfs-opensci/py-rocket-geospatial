@@ -15,6 +15,8 @@ RUN wget -qO- https://raw.githubusercontent.com/retorquere/zotero-deb/master/ins
 
 # Copy the repo files into /tmp (environment/*.yml, install.R, etc)
 COPY . /tmp/
+# Fix permissions so NB_USER can write to /tmp/environment during package installs
+RUN chown -R ${NB_USER}:${NB_USER} /tmp/environment && chmod -R 755 /tmp/environment
 
 # Update conda env sequentially to prevent hairy solve
 RUN /pyrocket_scripts/install-conda-packages.sh /tmp/environment/env-core1.yml || (echo "install env-core1 failed" && exit 1)
