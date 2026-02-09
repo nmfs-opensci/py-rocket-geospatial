@@ -20,7 +20,7 @@ The pinned file includes:
   - Packages from pangeo-notebook feedstock
   - Packages from pangeo-dask feedstock
   - Other packages from py-rocket-base
-  - Packages from environment/env-*.yml files
+  - Packages from conda-env/env-*.yml files
 
 Not all 900+ packages from the conda environment are included.
 

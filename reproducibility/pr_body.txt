@@ -4,8 +4,8 @@ All Python packages from env-*.yml files and all R packages from install.R,
 install_geospatial.sh, and install_tidyverse.sh are present in the container image.
 
 ### Changes
-- **packages-python-pinned.yaml**: Updated with packages from env files only (not all 900+ conda packages)
-- **packages-r-pinned.R**: Updated with latest R package versions from site-library
-- **build.log**: Validation report for both Python and R packages
+- **reproducibility/packages-python-pinned.yaml**: Updated with packages from env files only (not all 900+ conda packages)
+- **reproducibility/packages-r-pinned.R**: Updated with latest R package versions from site-library
+- **reproducibility/build.log**: Validation report for both Python and R packages
 
 Auto-generated from latest container image.

@@ -46,7 +46,7 @@ sphinx=9.0.4=pyhd8ed1ab_0
 sphinxcontrib-bibtex=2.6.5=pyhd8ed1ab_0
 websockify=0.13.0=py311h49ec1c0_2
 
-# Packages from environment/env-*.yml files
+# Packages from conda-env/env-*.yml files
 adlfs=2025.8.0=pyhd8ed1ab_0
 apng=0.3.4=pyhd8ed1ab_0
 awscliv2=2.3.1=pyhd8ed1ab_1
