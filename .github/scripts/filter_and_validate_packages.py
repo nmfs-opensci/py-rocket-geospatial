@@ -26,7 +26,8 @@ def parse_env_files(repo_root: Path) -> Dict[str, Set[str]]:
     Returns:
         Dictionary mapping filename to set of package names
     """
-    env_files = sorted(repo_root.glob("env-*.yml"))
+    env_dir = repo_root / "environment"
+    env_files = sorted(env_dir.glob("env-*.yml"))
     packages_by_file = {}
     
     for env_file in env_files:
