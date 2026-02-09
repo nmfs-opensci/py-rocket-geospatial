@@ -1,86 +1,99 @@
-# py-rocket-geospatial v2.0
+# py-rocket-geospatial-2
 
 [![Build and Push](https://github.com/nmfs-opensci/py-rocket-geospatial-2/actions/workflows/build-and-push.yml/badge.svg)](https://github.com/nmfs-opensci/py-rocket-geospatial-2/actions/workflows/build-and-push.yml)
 [![ghcr.io](https://img.shields.io/badge/ghcr.io-container--images%2Fpy--rocket--geospatial--2-blue?logo=docker)](https://github.com/nmfs-opensci/container-images/pkgs/container/container-images%2Fpy-rocket-geospatial-2)
 
-**Stable Version: 2025.12.23** ---   **Dev Version: 2026.02.08**
+**Stable Version:** 2025.12.23  
+**Dev Version:** 2026.02.08  
 
 ```bash
 docker pull ghcr.io/nmfs-opensci/container-images/py-rocket-geospatial-2:latest
 docker run -it --rm -p 8888:8888 ghcr.io/nmfs-opensci/container-images/py-rocket-geospatial-2:latest
 ```
 
-This creates a base Python-R image with geospatial packages for Python and R. The Python environment is the Pangeo notebook environment + extra geospatial libraries (similar to CryoCloud). The R environment is Rocker geospatial plus a few other packages. The image also includes a linux Desktop with QGIS, CoastWatch Utilities, and Panoply.
+---
 
-TeXLive and Quarto are installed along with MyST and JupyterBook.
+## What is py-rocket-geospatial-2?
 
-Python 3.11 is installed with a conda environment called notebook that is activated on opening the container. R 4.5.X is installed and operates separate from the conda notebook environment (conda is not on the PATH when using R). R can be used from RStudio or JupyterLab and the same R environment is used.
+**py-rocket-geospatial-2** is a Python–R geospatial Docker image for large-scale earth-science data analysis in JupyterHub environments.
 
-## Structure
+It is designed for users working with large earth-observation datasets, especially cloud-native data, from organizations such as NOAA, NASA, and other public earth-science data providers. The image targets workflows common in cryoscience, oceanography, climate science, and remote sensing. It is optimized for:
 
-* The base infrastructure (Jupyter, Dask, Python install, conda env, R install, all the set ups around the user experience) are in [py-rocket-base](https://github.com/nmfs-opensci/py-rocket-base/) which is the base image in the Dockerfile. See the  [py-rocket-base documentation](https://nmfs-opensci.github.io/py-rocket-base/) for information on the base image structure and design.
-* py-rocket-geospatial-2 the Python scientific core packages and Python and R geospatial packages. Note the R core scientific packages are in py-rocket-base since rocker_verse is the base R.
-* py-rocket-geospatial-2 also installs QGIS, CoastWatch Utilities, and Panoply.
+- big-data, array-based analysis  
+- cloud object storage and distributed computing  
+- shared, multi-user JupyterHub deployments  
 
-#### Build inputs that determine the image packages
-* [Dockerfile](Dockerfile)
-* [Python packages (source env files)](conda-env)
-* [R packages (source install file)](install.R)
-* [system packages](apt.txt)
-* [Desktop apps](Desktop)
+---
 
-#### Generated artifacts (reproducibility)
-* [Pinned Python packages](reproducibility/packages-python-pinned.yaml) - Auto-generated list of all Python packages with pinned versions
-* [Pinned R packages](reproducibility/packages-r-pinned.R) - Auto-generated list of all R packages with pinned versions
-* [Build log](reproducibility/build.log) - Validation report
+## py-rocket-geospatial-2 combines three ecosystems:
 
+### Python (Pangeo-style big-data stack)
+- Based on the Pangeo notebook environment  
+- Designed for xarray/Dask-style workflows  
+- Extended with additional geospatial and scientific packages  
 
-## Customizing py-rocket-geospatial-2
+### R (Rocker-based geospatial environment)
+- R installed via Rocker installation scripts  
+- RStudio and JupyterLab share the same R environment  
+- R runs independently of the conda Python environment  
 
-* edit the Python packages here `conda-env/env-*.yml`
-* edit the R packages here `install.R`
-* update the QGIS, CoastWatch Utilities, and Panoply installs here `Dockerfile`
-* update the systems installs here `apt.txt`
+### Desktop tools for earth science
+- Linux desktop via VNC  
+- Pre-installed applications commonly used in earth-science workflows: QGIS, Panoply, CoastWatch Utilities  
 
-If the changes are core functionality, not scientific, put in an [issue in py-rocket-base](https://github.com/nmfs-opensci/py-rocket-base/issues).
+The image also includes Quarto, TeX Live, MyST, and JupyterBook for scientific publishing.
 
-### Package Pinning and Validation
+---
 
-The repository automatically maintains pinned package versions with validation:
-- `reproducibility/packages-python-pinned.yaml` - Contains Python packages from py-rocket-base environment.yaml and
-  conda-env/env-*.yml files with exact versions (not all 900+ conda packages)
-  - Packages from py-rocket-base are listed first (including pangeo-notebook and pangeo-dask feedstocks)
-  - Packages from conda-env/env-*.yml files are listed second
-- `reproducibility/packages-r-pinned.R` - Contains all R packages from the site-library with exact versions
-- `reproducibility/build.log` - Validation report showing if all packages from env files and rocker scripts are present
+## Runtime overview
 
-The [Pin Package Versions workflow](.github/workflows/pin-packages.yml):
-- Runs automatically after each successful build
-- Can be manually triggered from the Actions tab
-- Extracts package versions from the published Docker image
-- **Extracts py-rocket-base environment.yaml** from /srv/repo in the container image
-- **Filters Python packages** to only include those specified in:
-  - py-rocket-base environment.yaml (including pangeo-notebook and pangeo-dask feedstock packages)
-  - conda-env/env-*.yml files
-- **Validates Python packages** that all packages from py-rocket-base and conda-env/env-*.yml files are present in the container
-- **Validates R packages** that all packages from install.R, /rocker_scripts/install_geospatial.sh, and /rocker_scripts/install_tidyverse.sh are present in the container
-- Creates a PR with:
-  - Updated pinned package files
-  - reproducibility/build.log with validation results for both Python and R
-  - Clear status (✅ SUCCESS or ⚠️ FAILED) in PR description
+- **Python:** 3.11  
+  - Conda environment `notebook`, activated on startup  
+- **R:** 4.5.x  
+  - Shared across RStudio and JupyterLab  
 
-**On validation success:** All packages are present and pinned.
+---
 
-**On validation failure:** PR includes:
-- Filtered list of packages that were successfully installed
-- reproducibility/build.log with detailed report of missing packages (both Python and R)
-- Action required to investigate and fix installation issues
+## Image structure
 
-This provides a complete snapshot of all installed packages for reproducibility and debugging.
+- **Base infrastructure** (Jupyter, Dask, Python install, conda setup, R install, and user-experience configuration) lives in  
+   [py-rocket-base](https://github.com/nmfs-opensci/py-rocket-base)
 
-## Derivative images
+- **py-rocket-geospatial-2** adds:
+  - Python and R geospatial packages  
+  - Desktop applications (QGIS, CoastWatch Utilities, Panoply)  
 
-1. You can create a derivative image using py-rocket-geospatial-2 as the base. This will add packages to the conda and R environments.
+See the [py-rocket-base documentation](https://nmfs-opensci.github.io/py-rocket-base/) for base image design details.
+
+---
+
+## Reproducibility and validation
+
+This repository automatically maintains pinned and validated package lists:
+
+- `reproducibility/packages-python-pinned.yaml`  
+- `reproducibility/packages-r-pinned.R`  
+- `reproducibility/build.log`  
+
+Pinned versions are extracted directly from the built image and validated against the requested package lists to support reproducibility and debugging.
+
+---
+
+## Customization and derivative images
+
+### To customize py-rocket-geospatial-2
+
+* edit the Python packages in `conda-env/env-*.yml`
+* edit the R packages in `install.R`
+* update the QGIS, CoastWatch Utilities, and Panoply installs in `Dockerfile`
+* update the systems installs in `apt.txt
+
+If changes affect core platform behavior, please open an issue in  [py-rocket-base](https://github.com/nmfs-opensci/py-rocket-base/issues)
+
+### To create derivative images
+
+1. You can create a derivative image using py-rocket-geospatial-2 as the base. This will add packages to the conda and R environments. For example
+
 ```
 FROM ghcr.io/nmfs-opensci/container-images/py-rocket-geospatial-2:2026.02.08
 
@@ -102,6 +115,12 @@ WORKDIR ${HOME}
    - Copy `.github/workflows/build-and-push.yml` into your repo and edit the `image-name`.
    - Set up your repo to allow packages to be published to your location from your repo.
 
+---
+
 ## Provenance
 
-This image used to live at https://github.com/nmfs-opensci/container-images/tree/main/images/py-rocket-geospatial-2 but has now been moved to a dedicated directory. https://github.com/nmfs-opensci/container-images contains other derivative images used in NMFS OpenSci JupyterHubs.
+This image was originally maintained under  
+https://github.com/nmfs-opensci/container-images
+
+It now lives in its own dedicated repository as part of the NMFS OpenSci container ecosystem.
+
