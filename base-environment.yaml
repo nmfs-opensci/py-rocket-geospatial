@@ -1,0 +1,72 @@
+name: py-rocket-base
+
+channels:
+  - conda-forge
+  - nodefaults
+
+dependencies:
+  # Core JupyterHub packages
+  - python~=3.11.0
+  # most of the core libraries are in the pangeo-notebook meta package
+  # https://github.com/conda-forge/pangeo-notebook-feedstock?tab=readme-ov-file
+  # https://anaconda.org/channels/conda-forge/packages/pangeo-notebook/overview
+  - pangeo-notebook=2026.01.21
+  - pip
+  - jupyter-resource-usage
+  - gh-scoped-creds==4.1
+
+  # Some more basic UI/UX
+  - conda-lock
+  - pigz
+  - python-dotenv
+
+  # R/RStudio Support
+  - jupyter-rsession-proxy
+
+  # VS Code support
+  - jupyter-vscode-proxy
+  - code-server=4.98.0  # Pin to prevent downgrades when conda env is updated
+
+  # https://syncthing.net/ provides a dropbox-like interface for syncing directories across users,
+  # hubs and machines. Used along with `jupyter-syncthing-proxy`.
+  #- jupyter-syncthing-proxy==1.0.3
+  #- syncthing~=1.22.1
+
+  # Extra Jupyter tools
+  - jupyterlab-git
+  #- jupyter-ai # was causing a memory leak so out for now
+  - jupyter-book
+  - jupyter-offlinenotebook
+  - jupyter-sshd-proxy
+  - jupyterlab-favorites
+  - jupyterlab-geojson
+  - jupyterlab-h5web
+  - jupyterlab-myst
+  - jupytext # no jupytext until quarto bug that deletes content is fixed
+  - nbdime
+  - escapism
+  
+  # JupyterBook Addons
+  - sphinx
+  - sphinxcontrib-bibtex
+
+  # More git tools from github-cli
+  - gh
+
+  # Resolves warning "No ICDs were found": https://github.com/CryoInTheCloud/hub-image/issues/50
+  - ocl-icd-system
+  # needed for Linux desktop to work
+  - websockify>=0.10
+  # Includes new subcommands (`switch` & `restore`) and vulnerability fixes
+  # over the version available via ubuntu sources
+  - git>=2.39
+
+  # Not all packages will be available from conda-forge, we install from pip when we need to.
+  - pip
+  - pip:
+    # Access linux desktop from inside JupyterHub
+    - jupyter-remote-desktop-proxy
+    # Create urls to open files directly in hub
+    - jupyterlab-open-url-parameter
+    # Open quarto files in JupyterLab
+    - jupyterlab-quarto

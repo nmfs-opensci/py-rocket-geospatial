@@ -1,3 +1,5 @@
+
+# Packages from environment/env-*.yml files
 adlfs=2025.8.0=pyhd8ed1ab_0
 apng=0.3.4=pyhd8ed1ab_0
 awscliv2=2.3.1=pyhd8ed1ab_1
