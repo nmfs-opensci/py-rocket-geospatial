@@ -13,7 +13,7 @@ USER root
 # Install Zotero; must be run before apt since apt install zotero requires this script be run first
 RUN wget -qO- https://raw.githubusercontent.com/retorquere/zotero-deb/master/install.sh | bash
 
-# Copy the repo files into /tmp (env-*.yml, install.R, etc)
+# Copy the repo files into /tmp (environment/*.yml, install.R, etc)
 COPY . /tmp/
 
 # Update conda env sequentially to prevent hairy solve

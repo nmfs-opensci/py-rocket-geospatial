@@ -73,7 +73,7 @@ FROM ghcr.io/nmfs-opensci/container-images/py-rocket-geospatial-2:2026.02.08
 USER root
 
 COPY . /tmp/
-RUN /pyrocket_scripts/install-conda-packages.sh /tmp/environment/environment.yml || echo "install-conda-packages.sh failed" || true
+RUN /pyrocket_scripts/install-conda-packages.sh /tmp/your-environment.yml || echo "install-conda-packages.sh failed" || true
 RUN /pyrocket_scripts/install-r-packages.sh /tmp/install.R || echo "install-r-package.sh failed" || true
 RUN rm -rf /tmp/*
 
