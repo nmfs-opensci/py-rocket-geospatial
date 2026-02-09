@@ -35,24 +35,6 @@
     "Open Science",
     "Pangeo"
   ],
-  "description": "<p>The py-rocket-geospatial-2 Docker image is a geospatial, earth-science–oriented scientific computing environment designed for large-scale data analysis in JupyterHub deployments. It targets cloud-native and big-data workflows commonly used in oceanography, climate science, hydrology, and remote sensing.</p>
-
-<p>The image builds on design patterns from the Pangeo ecosystem and provides an integrated Python and R environment optimized for array-based, spatiotemporal datasets and scalable analysis.</p>
-
-<p>This image includes:</p>
-<ul>
-  <li>Python with an earth-science geospatial stack suited for large datasets and cloud-native workflows (e.g., array-based analysis, distributed computing, and object storage access)</li>
-  <li>R with RStudio and geospatial R packages, installed using Rocker Project installation scripts</li>
-  <li>JupyterLab with support for both Python and R notebooks</li>
-  <li>Desktop environment with VNC for graphical tools commonly used in earth-science workflows (e.g., QGIS, Panoply)</li>
-  <li>VS Code OSS with extensions optimized for scientific notebooks and Quarto</li>
-  <li>Publishing tools including Quarto, JupyterBook, MyST, Pandoc, and TeX Live</li>
-  <li>pyrocket_scripts to assist with common customization and extension tasks</li>
-  <li>rocker_scripts to support R and RStudio environment setup</li>
-</ul>
-
-<p>The image is tailored for users working with NASA Earthdata and other large earth-observation archives, including workflows that authenticate and access data programmatically (e.g., via earthaccess). It is intended to lower barriers for reproducible, cloud-ready analysis of large earth-system datasets in shared JupyterHub environments.</p>
-
-<p>Rocker installation scripts are licensed under GPL-2.0-or-later and retain their original license; the resulting container is licensed under Apache-2.0.</p>"
+  "description": "<p>The py-rocket-geospatial-2 Docker image is a geospatial, earth-science-oriented scientific computing environment designed for large-scale data analysis in JupyterHub deployments. It targets cloud-native and big-data workflows commonly used in oceanography, climate science, hydrology, and remote sensing.</p> <p>The image builds on design patterns from the Pangeo ecosystem and provides an integrated Python and R environment optimized for array-based, spatiotemporal datasets and scalable analysis.</p> <p>This image includes:</p> <ul> <li>Python with an earth-science geospatial stack suited for large datasets and cloud-native workflows (e.g., array-based analysis, distributed computing, and object storage access)</li> <li>R with RStudio and geospatial R packages, installed using Rocker Project installation scripts</li> <li>JupyterLab with support for both Python and R notebooks</li> <li>Desktop environment with VNC for graphical tools commonly used in earth-science workflows (e.g., QGIS, Panoply)</li> <li>VS Code OSS with extensions optimized for scientific notebooks and Quarto</li> <li>Publishing tools including Quarto, JupyterBook, MyST, Pandoc, and TeX Live</li> <li>pyrocket_scripts to assist with common customization and extension tasks</li> <li>rocker_scripts to support R and RStudio environment setup</li> </ul> <p>The image is tailored for users working with NASA Earthdata and other large earth-observation archives, including workflows that authenticate and access data programmatically (e.g., via earthaccess). It is intended to lower barriers for reproducible, cloud-ready analysis of large earth-system datasets in shared JupyterHub environments.</p> <p>Rocker installation scripts are licensed under GPL-2.0-or-later and retain their original license; the resulting container is licensed under Apache-2.0.</p>"
 }
 
