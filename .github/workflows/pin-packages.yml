@@ -108,7 +108,7 @@ jobs:
 
           ### Changes
           - **packages-python-pinned.yaml**: Updated with subset of packages that were successfully installed
-          - **packages-r-pinned.R**: Updated with latest R package versions  
+          - **packages-r-pinned.R**: Updated with latest R package versions
           - **build.log**: Detailed report of missing packages
 
           **Action Required:** Review build.log for missing packages and investigate installation issues.

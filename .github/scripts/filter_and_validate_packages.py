@@ -16,7 +16,7 @@ import sys
 import yaml
 import re
 from pathlib import Path
-from typing import Set, Dict, List
+from typing import Set, Dict, List, Tuple
 
 
 def parse_env_files(repo_root: Path) -> Dict[str, Set[str]]:
@@ -58,12 +58,12 @@ def parse_env_files(repo_root: Path) -> Dict[str, Set[str]]:
     return packages_by_file
 
 
-def read_pinned_packages(pinned_file: Path) -> Dict[str, str]:
+def read_pinned_packages(pinned_file: Path) -> Tuple[Dict[str, str], List[str]]:
     """
     Parse packages-python-pinned.yaml to extract package names and full lines.
     
     Returns:
-        Dictionary mapping package name to full line
+        Tuple of (dictionary mapping package name to full line, list of header lines)
     """
     packages = {}
     header_lines = []
