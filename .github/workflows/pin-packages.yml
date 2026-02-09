@@ -40,6 +40,22 @@ jobs:
           echo "Python packages extracted to packages-python-pinned.yaml"
           head -20 packages-python-pinned.yaml
 
+      - name: Set up Python for validation
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml
+
+      - name: Filter and validate Python packages
+        run: |
+          python .github/scripts/filter_and_validate_packages.py
+          echo "Validation complete. Check build.log for results."
+          cat build.log
+
       - name: Extract R packages with pinned versions
         run: |
           IMAGE=ghcr.io/nmfs-opensci/container-images/py-rocket-geospatial-2:latest
@@ -58,12 +74,47 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
 
-          git add packages-python-pinned.yaml packages-r-pinned.R
+          git add packages-python-pinned.yaml packages-r-pinned.R build.log
 
           if ! git diff --staged --quiet; then
             git commit -m "Update pinned package versions from container image"
           else
             echo "No changes to commit"
+          fi
+
+      - name: Set PR body based on validation results
+        id: pr_body
+        run: |
+          if grep -q "STATUS: SUCCESS" build.log; then
+            echo "status=success" >> $GITHUB_OUTPUT
+            cat > pr_body.txt << 'EOF'
+          ## Package Validation: ✅ SUCCESS
+
+          All Python packages from env-*.yml files are present in the container image.
+
+          ### Changes
+          - **packages-python-pinned.yaml**: Updated with packages from env files only (not all 900+ conda packages)
+          - **packages-r-pinned.R**: Updated with latest R package versions
+          - **build.log**: Validation report
+
+          Auto-generated from latest container image.
+          EOF
+          else
+            echo "status=failed" >> $GITHUB_OUTPUT
+            cat > pr_body.txt << 'EOF'
+          ## Package Validation: ⚠️ FAILED
+
+          Some packages in env-*.yml files were NOT found in the container image.
+
+          ### Changes
+          - **packages-python-pinned.yaml**: Updated with subset of packages that were successfully installed
+          - **packages-r-pinned.R**: Updated with latest R package versions  
+          - **build.log**: Detailed report of missing packages
+
+          **Action Required:** Review build.log for missing packages and investigate installation issues.
+
+          Auto-generated from latest container image.
+          EOF
           fi
 
       - name: Create Pull Request
@@ -74,7 +125,7 @@ jobs:
           branch: ci/update-pins
           delete-branch: true
           title: "Update pinned package versions"
-          body: "Auto-generated from latest container image."
+          body-path: pr_body.txt
           assignees: eeholmes
           reviewers: eeholmes
           commit-message: "Update pinned package versions from container image"
