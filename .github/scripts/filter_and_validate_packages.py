@@ -20,16 +20,15 @@ from pathlib import Path
 from typing import Set, Dict, List, Tuple
 
 
-def parse_base_environment(base_env_file: Path) -> Set[str]:
+def parse_base_environment(base_env_file: Path) -> Tuple[Set[str], Set[str], Set[str]]:
     """
     Parse py-rocket-base environment.yaml and extract Python package names.
-    This includes packages from pangeo-notebook and pangeo-dask feedstocks.
+    This includes packages from pangeo-notebook and pangeo-dask feedstocks,
+    and all other packages listed in the file.
     
     Returns:
-        Set of package names from py-rocket-base
+        Tuple of (pangeo_notebook_packages, pangeo_dask_packages, other_base_packages)
     """
-    packages = set()
-    
     # Known packages from pangeo-notebook feedstock (from meta.yaml)
     pangeo_notebook_packages = {
         'pangeo-dask',
@@ -48,9 +47,8 @@ def parse_base_environment(base_env_file: Path) -> Set[str]:
         'dask-gateway'
     }
     
-    # Add pangeo feedstock packages
-    packages.update(pangeo_notebook_packages)
-    packages.update(pangeo_dask_packages)
+    # All packages from the environment.yml
+    all_base_packages = set()
     
     if base_env_file.exists():
         with open(base_env_file, 'r') as f:
@@ -62,19 +60,23 @@ def parse_base_environment(base_env_file: Path) -> Set[str]:
                         if isinstance(dep, str):
                             # Extract package name (before version specifiers)
                             pkg_name = re.split(r'[>=<~!]', dep)[0].strip()
-                            if pkg_name and pkg_name != 'pip':
-                                packages.add(pkg_name)
+                            # Exclude python itself and pip (not conda packages in the traditional sense)
+                            if pkg_name and pkg_name not in ['python', 'pip']:
+                                all_base_packages.add(pkg_name)
                         elif isinstance(dep, dict) and 'pip' in dep:
                             # Handle pip dependencies
                             for pip_dep in dep['pip']:
                                 pkg_name = re.split(r'[>=<~!]', pip_dep)[0].strip()
                                 if pkg_name:
-                                    packages.add(pkg_name)
+                                    all_base_packages.add(pkg_name)
                 
             except yaml.YAMLError as e:
                 print(f"Error parsing {base_env_file}: {e}", file=sys.stderr)
     
-    return packages
+    # Separate other packages (not in pangeo feedstocks)
+    other_base_packages = all_base_packages - pangeo_notebook_packages - pangeo_dask_packages
+    
+    return pangeo_notebook_packages, pangeo_dask_packages, other_base_packages
 
 
 def parse_env_files(repo_root: Path) -> Dict[str, Set[str]]:
@@ -147,23 +149,36 @@ def read_pinned_packages(pinned_file: Path) -> Tuple[Dict[str, str], List[str]]:
 
 
 def write_filtered_packages(pinned_file: Path, header_lines: List[str], 
-                            base_packages: Dict[str, str],
+                            pangeo_notebook_packages: Dict[str, str],
+                            pangeo_dask_packages: Dict[str, str],
+                            other_base_packages: Dict[str, str],
                             env_packages: Dict[str, str]):
     """
     Write filtered packages back to packages-python-pinned.yaml.
-    Organizes output with py-rocket-base packages first, then env-*.yml packages.
+    Organizes output with separate sections for pangeo feedstocks and other base packages.
     """
     with open(pinned_file, 'w') as f:
         # Write header
         for line in header_lines:
             f.write(line)
         
-        # Write py-rocket-base packages first
-        if base_packages:
-            f.write('\n# Packages from py-rocket-base environment.yaml\n')
-            f.write('# Includes packages from pangeo-notebook and pangeo-dask feedstocks\n')
-            for pkg_name in sorted(base_packages.keys()):
-                f.write(base_packages[pkg_name] + '\n')
+        # Write pangeo-notebook feedstock packages
+        if pangeo_notebook_packages:
+            f.write('\n# Packages from pangeo-notebook feedstock\n')
+            for pkg_name in sorted(pangeo_notebook_packages.keys()):
+                f.write(pangeo_notebook_packages[pkg_name] + '\n')
+        
+        # Write pangeo-dask feedstock packages
+        if pangeo_dask_packages:
+            f.write('\n# Packages from pangeo-dask feedstock\n')
+            for pkg_name in sorted(pangeo_dask_packages.keys()):
+                f.write(pangeo_dask_packages[pkg_name] + '\n')
+        
+        # Write other py-rocket-base packages
+        if other_base_packages:
+            f.write('\n# Other packages from py-rocket-base environment.yaml\n')
+            for pkg_name in sorted(other_base_packages.keys()):
+                f.write(other_base_packages[pkg_name] + '\n')
         
         # Write env-*.yml packages
         if env_packages:
@@ -174,7 +189,9 @@ def write_filtered_packages(pinned_file: Path, header_lines: List[str],
 
 def write_build_log(log_file: Path, success: bool, missing_packages: Set[str],
                    packages_by_file: Dict[str, Set[str]], 
-                   total_base_packages: int,
+                   total_pangeo_notebook: int,
+                   total_pangeo_dask: int,
+                   total_other_base: int,
                    total_env_packages: int, total_pinned: int):
     """
     Write build.log with validation results.
@@ -184,7 +201,10 @@ def write_build_log(log_file: Path, success: bool, missing_packages: Set[str],
         f.write("Python Package Validation Report\n")
         f.write("=" * 70 + "\n\n")
         
-        f.write(f"Total packages from py-rocket-base: {total_base_packages}\n")
+        f.write(f"Packages from pangeo-notebook feedstock: {total_pangeo_notebook}\n")
+        f.write(f"Packages from pangeo-dask feedstock: {total_pangeo_dask}\n")
+        f.write(f"Other packages from py-rocket-base: {total_other_base}\n")
+        f.write(f"Total packages from py-rocket-base: {total_pangeo_notebook + total_pangeo_dask + total_other_base}\n")
         f.write(f"Total unique packages in env-*.yml files: {total_env_packages}\n")
         f.write(f"Total packages in filtered packages-python-pinned.yaml: {total_pinned}\n\n")
         
@@ -195,7 +215,9 @@ def write_build_log(log_file: Path, success: bool, missing_packages: Set[str],
             f.write("env-*.yml files are present in the container image and have been\n")
             f.write("pinned in packages-python-pinned.yaml.\n\n")
             f.write("The pinned file includes:\n")
-            f.write("  - Packages from py-rocket-base (including pangeo-notebook and pangeo-dask)\n")
+            f.write("  - Packages from pangeo-notebook feedstock\n")
+            f.write("  - Packages from pangeo-dask feedstock\n")
+            f.write("  - Other packages from py-rocket-base\n")
             f.write("  - Packages from environment/env-*.yml files\n")
             f.write("\nNot all 900+ packages from the conda environment are included.\n")
         else:
@@ -236,9 +258,12 @@ def main():
     
     # Parse py-rocket-base environment.yaml
     print("Parsing py-rocket-base environment.yaml...")
-    base_packages_set = parse_base_environment(base_env_file)
-    print(f"Found {len(base_packages_set)} packages in py-rocket-base")
-    print("  (including pangeo-notebook and pangeo-dask feedstock packages)")
+    pangeo_notebook_set, pangeo_dask_set, other_base_set = parse_base_environment(base_env_file)
+    all_base_packages = pangeo_notebook_set | pangeo_dask_set | other_base_set
+    print(f"Found {len(pangeo_notebook_set)} packages from pangeo-notebook feedstock")
+    print(f"Found {len(pangeo_dask_set)} packages from pangeo-dask feedstock")
+    print(f"Found {len(other_base_set)} other packages from py-rocket-base")
+    print(f"Total packages from py-rocket-base: {len(all_base_packages)}")
     
     # Parse env files
     print("\nParsing env-*.yml files...")
@@ -257,7 +282,7 @@ def main():
     print(f"Total unique packages in env files: {len(all_env_packages)}")
     
     # Combine all packages we want to include
-    all_target_packages = base_packages_set | all_env_packages
+    all_target_packages = all_base_packages | all_env_packages
     print(f"\nTotal packages to include: {len(all_target_packages)}")
     
     # Read all pinned packages
@@ -265,13 +290,29 @@ def main():
     all_pinned_packages, header_lines = read_pinned_packages(pinned_file)
     print(f"Found {len(all_pinned_packages)} total pinned packages")
     
-    # Filter to packages from py-rocket-base
-    base_filtered = {}
-    for pkg_name in base_packages_set:
+    # Filter to packages from pangeo-notebook feedstock
+    pangeo_notebook_filtered = {}
+    for pkg_name in pangeo_notebook_set:
         if pkg_name in all_pinned_packages:
-            base_filtered[pkg_name] = all_pinned_packages[pkg_name]
+            pangeo_notebook_filtered[pkg_name] = all_pinned_packages[pkg_name]
     
-    print(f"Filtered to {len(base_filtered)} packages from py-rocket-base")
+    print(f"Filtered to {len(pangeo_notebook_filtered)} packages from pangeo-notebook feedstock")
+    
+    # Filter to packages from pangeo-dask feedstock
+    pangeo_dask_filtered = {}
+    for pkg_name in pangeo_dask_set:
+        if pkg_name in all_pinned_packages:
+            pangeo_dask_filtered[pkg_name] = all_pinned_packages[pkg_name]
+    
+    print(f"Filtered to {len(pangeo_dask_filtered)} packages from pangeo-dask feedstock")
+    
+    # Filter to other packages from py-rocket-base
+    other_base_filtered = {}
+    for pkg_name in other_base_set:
+        if pkg_name in all_pinned_packages:
+            other_base_filtered[pkg_name] = all_pinned_packages[pkg_name]
+    
+    print(f"Filtered to {len(other_base_filtered)} other packages from py-rocket-base")
     
     # Filter to packages from env files
     env_filtered = {}
@@ -282,12 +323,13 @@ def main():
     print(f"Filtered to {len(env_filtered)} packages from env files")
     
     # Find missing packages
-    all_filtered = set(base_filtered.keys()) | set(env_filtered.keys())
+    all_filtered = set(pangeo_notebook_filtered.keys()) | set(pangeo_dask_filtered.keys()) | set(other_base_filtered.keys()) | set(env_filtered.keys())
     missing_packages = all_target_packages - all_filtered
     
     # Write filtered packages back
     print(f"\nWriting filtered packages to {pinned_file.name}...")
-    write_filtered_packages(pinned_file, header_lines, base_filtered, env_filtered)
+    write_filtered_packages(pinned_file, header_lines, pangeo_notebook_filtered, 
+                           pangeo_dask_filtered, other_base_filtered, env_filtered)
     
     # Determine success
     success = len(missing_packages) == 0
@@ -295,7 +337,8 @@ def main():
     # Write build log
     print(f"Writing validation results to {log_file.name}...")
     write_build_log(log_file, success, missing_packages, packages_by_file,
-                   len(base_packages_set), len(all_env_packages), len(all_filtered))
+                   len(pangeo_notebook_set), len(pangeo_dask_set), len(other_base_set),
+                   len(all_env_packages), len(all_filtered))
     
     # Print results
     print("\n" + "=" * 70)
@@ -303,7 +346,9 @@ def main():
         print("SUCCESS: All packages validated and pinned")
         print("=" * 70)
         print(f"\npackages-python-pinned.yaml now contains {len(all_filtered)} packages:")
-        print(f"  - {len(base_filtered)} from py-rocket-base")
+        print(f"  - {len(pangeo_notebook_filtered)} from pangeo-notebook feedstock")
+        print(f"  - {len(pangeo_dask_filtered)} from pangeo-dask feedstock")
+        print(f"  - {len(other_base_filtered)} other from py-rocket-base")
         print(f"  - {len(env_filtered)} from env-*.yml files")
         print(f"\nSee {log_file.name} for full report")
         sys.exit(0)

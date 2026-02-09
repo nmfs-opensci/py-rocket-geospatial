@@ -2,52 +2,84 @@
 Python Package Validation Report
 ======================================================================
 
-Total packages from py-rocket-base: 10
+Packages from pangeo-notebook feedstock: 7
+Packages from pangeo-dask feedstock: 3
+Other packages from py-rocket-base: 29
+Total packages from py-rocket-base: 39
 Total unique packages in env-*.yml files: 93
 Total packages in filtered packages-python-pinned.yaml: 103
 
-STATUS: SUCCESS
+STATUS: FAILED
 ======================================================================
 
-All Python packages from py-rocket-base environment.yaml and
-env-*.yml files are present in the container image and have been
-pinned in packages-python-pinned.yaml.
+The following packages are in env-*.yml or py-rocket-base files
+but were NOT found in the container image:
 
-The pinned file includes:
-  - Packages from py-rocket-base (including pangeo-notebook and pangeo-dask)
-  - Packages from environment/env-*.yml files
+  - code-server
+    Found in: py-rocket-base environment.yaml
+  - conda-lock
+    Found in: py-rocket-base environment.yaml
+  - escapism
+    Found in: py-rocket-base environment.yaml
+  - gh
+    Found in: py-rocket-base environment.yaml
+  - gh-scoped-creds
+    Found in: py-rocket-base environment.yaml
+  - git
+    Found in: py-rocket-base environment.yaml
+  - jupyter-book
+    Found in: py-rocket-base environment.yaml
+  - jupyter-offlinenotebook
+    Found in: py-rocket-base environment.yaml
+  - jupyter-remote-desktop-proxy
+    Found in: py-rocket-base environment.yaml
+  - jupyter-resource-usage
+    Found in: py-rocket-base environment.yaml
+  - jupyter-rsession-proxy
+    Found in: py-rocket-base environment.yaml
+  - jupyter-sshd-proxy
+    Found in: py-rocket-base environment.yaml
+  - jupyter-vscode-proxy
+    Found in: py-rocket-base environment.yaml
+  - jupyterlab-favorites
+    Found in: py-rocket-base environment.yaml
+  - jupyterlab-geojson
+    Found in: py-rocket-base environment.yaml
+  - jupyterlab-git
+    Found in: py-rocket-base environment.yaml
+  - jupyterlab-h5web
+    Found in: py-rocket-base environment.yaml
+  - jupyterlab-myst
+    Found in: py-rocket-base environment.yaml
+  - jupyterlab-open-url-parameter
+    Found in: py-rocket-base environment.yaml
+  - jupyterlab-quarto
+    Found in: py-rocket-base environment.yaml
+  - jupytext
+    Found in: py-rocket-base environment.yaml
+  - nbdime
+    Found in: py-rocket-base environment.yaml
+  - ocl-icd-system
+    Found in: py-rocket-base environment.yaml
+  - pangeo-notebook
+    Found in: py-rocket-base environment.yaml
+  - pigz
+    Found in: py-rocket-base environment.yaml
+  - python-dotenv
+    Found in: py-rocket-base environment.yaml
+  - sphinx
+    Found in: py-rocket-base environment.yaml
+  - sphinxcontrib-bibtex
+    Found in: py-rocket-base environment.yaml
+  - websockify
+    Found in: py-rocket-base environment.yaml
 
-Not all 900+ packages from the conda environment are included.
+Total missing packages: 29
 
-======================================================================
-
-
-======================================================================
-R Package Validation Report
-======================================================================
-
-Packages in install.R: 64
-Packages in /rocker_scripts/install_geospatial.sh: 32
-Packages in /rocker_scripts/install_tidyverse.sh: 17
-Total unique R packages expected: 112
-Archived packages excluded from validation: 4
-  (RandomFields, maptools, rgdal, rgeos)
-Total packages in packages-r-pinned.R: 418
-
-STATUS: SUCCESS
-======================================================================
-
-All R packages from install.R, install_geospatial.sh, and
-install_tidyverse.sh are present in packages-r-pinned.R.
-
-The packages-r-pinned.R file contains all required packages
-from the custom install.R and the rocker scripts.
-
-Note: The following archived packages were excluded from validation
-as they are no longer available on CRAN:
-  - RandomFields (found in: install_geospatial.sh)
-  - maptools (found in: install_geospatial.sh)
-  - rgdal (found in: install_geospatial.sh)
-  - rgeos (found in: install_geospatial.sh)
+To resolve this issue:
+  1. Check if these packages failed to install in the container
+  2. Review the container build logs for errors
+  3. Fix any installation issues and rebuild the container
+  4. If packages are not needed, remove them from the respective files
 
 ======================================================================
