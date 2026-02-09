@@ -59,7 +59,6 @@ remotes::install_version("crosstalk", version = "1.2.2", repos = repo, upgrade =
 remotes::install_version("crul", version = "1.6.0", repos = repo, upgrade = "never")
 remotes::install_version("curl", version = "7.0.0", repos = repo, upgrade = "never")
 remotes::install_version("data.table", version = "1.17.8", repos = repo, upgrade = "never")
-remotes::install_version("date", version = "1.2-42", repos = repo, upgrade = "never")
 remotes::install_version("DBI", version = "1.2.3", repos = repo, upgrade = "never")
 remotes::install_version("dbplyr", version = "2.5.1", repos = repo, upgrade = "never")
 remotes::install_version("deldir", version = "2.0-4", repos = repo, upgrade = "never")
