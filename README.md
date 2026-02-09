@@ -6,6 +6,7 @@
 **Latest version:** `2026.02.08`
 
 ```bash
+docker pull ghcr.io/nmfs-opensci/container-images/py-rocket-geospatial-2:latest
 docker run -it --rm -p 8888:8888 ghcr.io/nmfs-opensci/container-images/py-rocket-geospatial-2:latest
 ```
 
