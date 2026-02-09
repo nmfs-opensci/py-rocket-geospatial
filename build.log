@@ -1,0 +1,17 @@
+======================================================================
+Python Package Validation Report
+======================================================================
+
+Total unique packages in env-*.yml files: 93
+Total packages in filtered packages-python-pinned.yaml: 93
+
+STATUS: SUCCESS
+======================================================================
+
+All Python packages from env-*.yml files are present in the
+container image and have been pinned in packages-python-pinned.yaml.
+
+The pinned file now contains only the packages specified in env files,
+not all 900+ packages from the conda environment.
+
+======================================================================
