@@ -20,6 +20,90 @@ from pathlib import Path
 from typing import Set, Dict, List, Tuple
 
 
+def fetch_pangeo_feedstock_dependencies(package_name: str, version: str) -> Set[str]:
+    """
+    Fetch dependencies from pangeo feedstock meta.yaml on GitHub.
+    
+    Args:
+        package_name: Name of the pangeo package (e.g., 'pangeo-notebook', 'pangeo-dask')
+        version: Version string from the environment file
+    
+    Returns:
+        Set of package names that are dependencies
+    """
+    import urllib.request
+    import urllib.error
+    
+    # Map package name to feedstock name
+    feedstock_name = f"{package_name}-feedstock"
+    url = f"https://raw.githubusercontent.com/conda-forge/{feedstock_name}/main/recipe/meta.yaml"
+    
+    dependencies = set()
+    
+    try:
+        with urllib.request.urlopen(url, timeout=10) as response:
+            content = response.read().decode('utf-8')
+            
+            # Parse the meta.yaml content
+            # Look for the requirements: run: section
+            in_requirements = False
+            in_run_section = False
+            
+            for line in content.split('\n'):
+                stripped = line.strip()
+                
+                # Detect requirements section
+                if stripped.startswith('requirements:'):
+                    in_requirements = True
+                    continue
+                
+                # Within requirements, detect run section
+                if in_requirements and stripped.startswith('run:'):
+                    in_run_section = True
+                    continue
+                
+                # End of run section (new top-level key or another subsection at same indent level)
+                if in_run_section and stripped and not stripped.startswith('-') and not stripped.startswith('#'):
+                    # Check if it's a new section (contains ':' and not indented with spaces)
+                    if ':' in stripped and not line.startswith('  '):
+                        break
+                
+                # Extract package names from run section
+                if in_run_section and stripped.startswith('-'):
+                    # Remove leading dash and any version constraints
+                    pkg = stripped.lstrip('- ').strip()
+                    # Extract package name (before version specifiers or spaces)
+                    pkg_name = re.split(r'[>=<~!=\s]', pkg)[0].strip()
+                    if pkg_name and not pkg_name.startswith('{'):
+                        dependencies.add(pkg_name)
+        
+        print(f"  Fetched {len(dependencies)} dependencies from {package_name} feedstock")
+        
+    except (urllib.error.URLError, urllib.error.HTTPError, Exception) as e:
+        print(f"  Warning: Could not fetch {package_name} feedstock: {e}", file=sys.stderr)
+        print(f"  Using fallback hardcoded dependencies", file=sys.stderr)
+        
+        # Fallback to hardcoded values if fetch fails
+        if package_name == 'pangeo-notebook':
+            dependencies = {
+                'pangeo-dask',
+                'dask-labextension',
+                'ipywidgets',
+                'jupyter-server-proxy',
+                'jupyterhub-singleuser',
+                'jupyterlab',
+                'nbgitpuller'
+            }
+        elif package_name == 'pangeo-dask':
+            dependencies = {
+                'dask',
+                'distributed',
+                'dask-gateway'
+            }
+    
+    return dependencies
+
+
 def parse_base_environment(base_env_file: Path) -> Tuple[Set[str], Set[str], Set[str]]:
     """
     Parse py-rocket-base environment.yaml and extract Python package names.
@@ -29,49 +113,60 @@ def parse_base_environment(base_env_file: Path) -> Tuple[Set[str], Set[str], Set
     Returns:
         Tuple of (pangeo_notebook_packages, pangeo_dask_packages, other_base_packages)
     """
-    # Known packages from pangeo-notebook feedstock (from meta.yaml)
-    pangeo_notebook_packages = {
-        'pangeo-dask',
-        'dask-labextension',
-        'ipywidgets',
-        'jupyter-server-proxy',
-        'jupyterhub-singleuser',
-        'jupyterlab',
-        'nbgitpuller'
-    }
-    
-    # Known packages from pangeo-dask feedstock (from meta.yaml)
-    pangeo_dask_packages = {
-        'dask',
-        'distributed',
-        'dask-gateway'
-    }
+    # These will be populated from the feedstocks
+    pangeo_notebook_packages = set()
+    pangeo_dask_packages = set()
     
     # All packages from the environment.yml
     all_base_packages = set()
+    pangeo_notebook_version = None
     
-    if base_env_file.exists():
-        with open(base_env_file, 'r') as f:
-            try:
-                data = yaml.safe_load(f)
-                
-                if data and 'dependencies' in data:
-                    for dep in data['dependencies']:
-                        if isinstance(dep, str):
-                            # Extract package name (before version specifiers)
-                            pkg_name = re.split(r'[>=<~!]', dep)[0].strip()
-                            # Exclude python itself and pip (not conda packages in the traditional sense)
-                            if pkg_name and pkg_name not in ['python', 'pip']:
+    if not base_env_file.exists():
+        print(f"Warning: {base_env_file} not found", file=sys.stderr)
+        return pangeo_notebook_packages, pangeo_dask_packages, set()
+    
+    with open(base_env_file, 'r') as f:
+        try:
+            data = yaml.safe_load(f)
+            
+            if data and 'dependencies' in data:
+                for dep in data['dependencies']:
+                    if isinstance(dep, str):
+                        # Extract package name (before version specifiers)
+                        pkg_name = re.split(r'[>=<~!]', dep)[0].strip()
+                        
+                        # Check if this is pangeo-notebook to get its version
+                        if pkg_name == 'pangeo-notebook':
+                            # Extract version
+                            version_match = re.search(r'[>=<~!]=?([0-9.]+)', dep)
+                            if version_match:
+                                pangeo_notebook_version = version_match.group(1)
+                        
+                        # Exclude python itself and pip (not conda packages in the traditional sense)
+                        if pkg_name and pkg_name not in ['python', 'pip']:
+                            all_base_packages.add(pkg_name)
+                    elif isinstance(dep, dict) and 'pip' in dep:
+                        # Handle pip dependencies
+                        for pip_dep in dep['pip']:
+                            pkg_name = re.split(r'[>=<~!]', pip_dep)[0].strip()
+                            if pkg_name:
                                 all_base_packages.add(pkg_name)
-                        elif isinstance(dep, dict) and 'pip' in dep:
-                            # Handle pip dependencies
-                            for pip_dep in dep['pip']:
-                                pkg_name = re.split(r'[>=<~!]', pip_dep)[0].strip()
-                                if pkg_name:
-                                    all_base_packages.add(pkg_name)
-                
-            except yaml.YAMLError as e:
-                print(f"Error parsing {base_env_file}: {e}", file=sys.stderr)
+            
+        except yaml.YAMLError as e:
+            print(f"Error parsing {base_env_file}: {e}", file=sys.stderr)
+            return set(), set(), set()
+    
+    # Fetch dependencies from pangeo-notebook feedstock
+    print("Fetching pangeo-notebook feedstock dependencies...")
+    pangeo_notebook_packages = fetch_pangeo_feedstock_dependencies('pangeo-notebook', pangeo_notebook_version or '2026.01.21')
+    
+    # Fetch dependencies from pangeo-dask feedstock (it's included in pangeo-notebook)
+    print("Fetching pangeo-dask feedstock dependencies...")
+    pangeo_dask_packages = fetch_pangeo_feedstock_dependencies('pangeo-dask', pangeo_notebook_version or '2026.01.21')
+    
+    # Remove pangeo-notebook and pangeo-dask from all_base_packages since they're meta-packages
+    all_base_packages.discard('pangeo-notebook')
+    all_base_packages.discard('pangeo-dask')
     
     # Separate other packages (not in pangeo feedstocks)
     other_base_packages = all_base_packages - pangeo_notebook_packages - pangeo_dask_packages
@@ -133,17 +228,22 @@ def read_pinned_packages(pinned_file: Path) -> Tuple[Dict[str, str], List[str]]:
     with open(pinned_file, 'r') as f:
         for line in f:
             stripped = line.strip()
-            # Keep header comments
-            if stripped.startswith('#') or not stripped:
-                if in_header:
-                    header_lines.append(line)
+            
+            # Check if this is a package line (has '=' in it)
+            if '=' in stripped and not stripped.startswith('#'):
+                in_header = False
+                # Extract package name (before first '=')
+                pkg_name = stripped.split('=')[0].strip()
+                if pkg_name:
+                    packages[pkg_name] = line.rstrip('\n')
                 continue
             
-            in_header = False
-            # Extract package name (before first '=')
-            pkg_name = stripped.split('=')[0].strip()
-            if pkg_name:
-                packages[pkg_name] = line.rstrip('\n')
+            # Keep only leading header comments (before any packages)
+            # Skip section headers like "# Packages from..."
+            if in_header and (stripped.startswith('#') or not stripped):
+                # Only keep top-level header, not section headers
+                if not any(x in stripped.lower() for x in ['packages from', 'feedstock', 'environment']):
+                    header_lines.append(line)
     
     return packages, header_lines
 
