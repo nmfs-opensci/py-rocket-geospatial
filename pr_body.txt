@@ -1,10 +1,12 @@
-## Package Validation: ✅ SUCCESS
+## Package Validation: ⚠️ FAILED
 
-All Python packages from env-*.yml files are present in the container image.
+Some packages were NOT found in the container image. Check build.log for details.
 
 ### Changes
-- **packages-python-pinned.yaml**: Updated with packages from env files only (not all 900+ conda packages)
+- **packages-python-pinned.yaml**: Updated with subset of packages that were successfully installed
 - **packages-r-pinned.R**: Updated with latest R package versions
-- **build.log**: Validation report
+- **build.log**: Detailed report of missing packages (both Python and R)
+
+**Action Required:** Review build.log for missing packages and investigate installation issues.
 
 Auto-generated from latest container image.
