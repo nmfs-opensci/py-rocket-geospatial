@@ -41,24 +41,25 @@ If the changes are core functionality, not scientific, put in an [issue in py-ro
 The repository automatically maintains pinned package versions with validation:
 - `packages-python-pinned.yaml` - Contains Python packages from env-*.yml files with exact versions (not all 900+ conda packages)
 - `packages-r-pinned.R` - Contains all R packages from the site-library with exact versions
-- `build.log` - Validation report showing if all packages from env files are present
+- `build.log` - Validation report showing if all packages from env files and rocker scripts are present
 
 The [Pin Package Versions workflow](.github/workflows/pin-packages.yml):
 - Runs automatically after each successful build
 - Can be manually triggered from the Actions tab
 - Extracts package versions from the published Docker image
 - **Filters Python packages** to only include those specified in env-*.yml files
-- **Validates** that all packages from env files are present in the container
+- **Validates Python packages** that all packages from env-*.yml files are present in the container
+- **Validates R packages** that all packages from install.R and /rocker_scripts/install_geospatial.sh are present in the container
 - Creates a PR with:
   - Updated pinned package files
-  - build.log with validation results
+  - build.log with validation results for both Python and R
   - Clear status (✅ SUCCESS or ⚠️ FAILED) in PR description
 
 **On validation success:** All packages are present and pinned.
 
 **On validation failure:** PR includes:
 - Filtered list of packages that were successfully installed
-- build.log with detailed report of missing packages
+- build.log with detailed report of missing packages (both Python and R)
 - Action required to investigate and fix installation issues
 
 This provides a complete snapshot of all installed packages for reproducibility and debugging.

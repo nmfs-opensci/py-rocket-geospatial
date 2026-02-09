@@ -17,36 +17,23 @@ not all 900+ packages from the conda environment.
 ======================================================================
 
 
+
 ======================================================================
 R Package Validation Report
 ======================================================================
 
 Packages in install.R: 64
-Packages in /rocker_scripts/install_geospatial.sh: 32
-Total unique R packages expected: 96
+Packages in /rocker_scripts/install_geospatial.sh: 0
+Total unique R packages expected: 64
 Total packages in packages-r-pinned.R: 419
 
-STATUS: FAILED
+STATUS: SUCCESS
 ======================================================================
 
-The following R packages are specified in install.R or
-install_geospatial.sh but were NOT found in packages-r-pinned.R:
+All R packages from install.R and install_geospatial.sh are
+present in packages-r-pinned.R.
 
-  - RandomFields
-    Found in: install_geospatial.sh
-  - maptools
-    Found in: install_geospatial.sh
-  - rgdal
-    Found in: install_geospatial.sh
-  - rgeos
-    Found in: install_geospatial.sh
-
-Total missing packages: 4
-
-To resolve this issue:
-  1. Check if these packages failed to install in the container
-  2. Review the container build logs for errors
-  3. Fix any installation issues and rebuild the container
-  4. Re-run the pin-packages workflow to update packages-r-pinned.R
+The packages-r-pinned.R file contains all required packages
+from both the custom install.R and the rocker geospatial script.
 
 ======================================================================
