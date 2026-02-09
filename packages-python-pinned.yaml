@@ -1,7 +1,4 @@
 
-# Packages from py-rocket-base environment.yaml
-# Includes packages from pangeo-notebook and pangeo-dask feedstocks
-
 # Packages from pangeo-notebook feedstock
 dask-labextension=7.0.0=pyhd8ed1ab_1
 ipywidgets=8.1.8=pyhd8ed1ab_0
