@@ -9,7 +9,7 @@ on:
       - '.github/actions/build-and-push/action.yml'
       - '.github/workflows/build-and-push.yml'
       - 'Dockerfile'
-      - 'environment/env-*.yml'
+      - 'conda-env/env-*.yml'
       - 'install.R'
       - 'apt.txt'
       - 'Desktop/**'

@@ -20,20 +20,22 @@ Python 3.11 is installed with a conda environment called notebook that is activa
 * py-rocket-geospatial-2 the Python scientific core packages and Python and R geospatial packages. Note the R core scientific packages are in py-rocket-base since rocker_verse is the base R.
 * py-rocket-geospatial-2 also installs QGIS, CoastWatch Utilities, and Panoply.
 
-#### py-rocket-geospatial-2 files that determine the image packages
+#### Build inputs that determine the image packages
 * [Dockerfile](Dockerfile)
-* [Python packages (source env files)](environment)
+* [Python packages (source env files)](conda-env)
 * [R packages (source install file)](install.R)
 * [system packages](apt.txt)
+* [Desktop apps](Desktop)
 
-#### Package pins in the image
-* [Pinned Python packages](packages-python-pinned.yaml) - Auto-generated list of all Python packages with pinned versions
-* [Pinned R packages](packages-r-pinned.R) - Auto-generated list of all R packages with pinned versions
+#### Generated artifacts (reproducibility)
+* [Pinned Python packages](reproducibility/packages-python-pinned.yaml) - Auto-generated list of all Python packages with pinned versions
+* [Pinned R packages](reproducibility/packages-r-pinned.R) - Auto-generated list of all R packages with pinned versions
+* [Build log](reproducibility/build.log) - Validation report
 
 
 ## Customizing py-rocket-geospatial-2
 
-* edit the Python packages here `environment/env-*.yml`
+* edit the Python packages here `conda-env/env-*.yml`
 * edit the R packages here `install.R`
 * update the QGIS, CoastWatch Utilities, and Panoply installs here `Dockerfile`
 * update the systems installs here `apt.txt`
@@ -43,12 +45,12 @@ If the changes are core functionality, not scientific, put in an [issue in py-ro
 ### Package Pinning and Validation
 
 The repository automatically maintains pinned package versions with validation:
-- `packages-python-pinned.yaml` - Contains Python packages from py-rocket-base environment.yaml and
-  environment/env-*.yml files with exact versions (not all 900+ conda packages)
+- `reproducibility/packages-python-pinned.yaml` - Contains Python packages from py-rocket-base environment.yaml and
+  conda-env/env-*.yml files with exact versions (not all 900+ conda packages)
   - Packages from py-rocket-base are listed first (including pangeo-notebook and pangeo-dask feedstocks)
-  - Packages from environment/env-*.yml files are listed second
-- `packages-r-pinned.R` - Contains all R packages from the site-library with exact versions
-- `build.log` - Validation report showing if all packages from env files and rocker scripts are present
+  - Packages from conda-env/env-*.yml files are listed second
+- `reproducibility/packages-r-pinned.R` - Contains all R packages from the site-library with exact versions
+- `reproducibility/build.log` - Validation report showing if all packages from env files and rocker scripts are present
 
 The [Pin Package Versions workflow](.github/workflows/pin-packages.yml):
 - Runs automatically after each successful build
@@ -57,19 +59,19 @@ The [Pin Package Versions workflow](.github/workflows/pin-packages.yml):
 - **Extracts py-rocket-base environment.yaml** from /srv/repo in the container image
 - **Filters Python packages** to only include those specified in:
   - py-rocket-base environment.yaml (including pangeo-notebook and pangeo-dask feedstock packages)
-  - environment/env-*.yml files
-- **Validates Python packages** that all packages from py-rocket-base and environment/env-*.yml files are present in the container
+  - conda-env/env-*.yml files
+- **Validates Python packages** that all packages from py-rocket-base and conda-env/env-*.yml files are present in the container
 - **Validates R packages** that all packages from install.R, /rocker_scripts/install_geospatial.sh, and /rocker_scripts/install_tidyverse.sh are present in the container
 - Creates a PR with:
   - Updated pinned package files
-  - build.log with validation results for both Python and R
+  - reproducibility/build.log with validation results for both Python and R
   - Clear status (✅ SUCCESS or ⚠️ FAILED) in PR description
 
 **On validation success:** All packages are present and pinned.
 
 **On validation failure:** PR includes:
 - Filtered list of packages that were successfully installed
-- build.log with detailed report of missing packages (both Python and R)
+- reproducibility/build.log with detailed report of missing packages (both Python and R)
 - Action required to investigate and fix installation issues
 
 This provides a complete snapshot of all installed packages for reproducibility and debugging.

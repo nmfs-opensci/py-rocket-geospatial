@@ -181,7 +181,7 @@ def parse_env_files(repo_root: Path) -> Dict[str, Set[str]]:
     Returns:
         Dictionary mapping filename to set of package names
     """
-    env_dir = repo_root / "environment"
+    env_dir = repo_root / "conda-env"
     env_files = sorted(env_dir.glob("env-*.yml"))
     packages_by_file = {}
     
@@ -282,7 +282,7 @@ def write_filtered_packages(pinned_file: Path, header_lines: List[str],
         
         # Write env-*.yml packages
         if env_packages:
-            f.write('\n# Packages from environment/env-*.yml files\n')
+            f.write('\n# Packages from conda-env/env-*.yml files\n')
             for pkg_name in sorted(env_packages.keys()):
                 f.write(env_packages[pkg_name] + '\n')
 
@@ -318,7 +318,7 @@ def write_build_log(log_file: Path, success: bool, missing_packages: Set[str],
             f.write("  - Packages from pangeo-notebook feedstock\n")
             f.write("  - Packages from pangeo-dask feedstock\n")
             f.write("  - Other packages from py-rocket-base\n")
-            f.write("  - Packages from environment/env-*.yml files\n")
+            f.write("  - Packages from conda-env/env-*.yml files\n")
             f.write("\nNot all 900+ packages from the conda environment are included.\n")
         else:
             f.write("STATUS: FAILED\n")
@@ -347,8 +347,8 @@ def write_build_log(log_file: Path, success: bool, missing_packages: Set[str],
 def main():
     """Main function to filter and validate packages."""
     repo_root = Path(__file__).parent.parent.parent
-    pinned_file = repo_root / "packages-python-pinned.yaml"
-    log_file = repo_root / "build.log"
+    pinned_file = repo_root / "reproducibility" / "packages-python-pinned.yaml"
+    log_file = repo_root / "reproducibility" / "build.log"
     base_env_file = repo_root / "base-environment.yaml"
     
     # Check if pinned file exists

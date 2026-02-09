@@ -224,8 +224,8 @@ def main():
     """Main function to validate R packages."""
     repo_root = Path(__file__).parent.parent.parent
     install_r_path = repo_root / "install.R"
-    pinned_file = repo_root / "packages-r-pinned.R"
-    log_file = repo_root / "build.log"
+    pinned_file = repo_root / "reproducibility" / "packages-r-pinned.R"
+    log_file = repo_root / "reproducibility" / "build.log"
     
     # Temporary files created by workflow with rocker script content
     geospatial_file = Path("/tmp/install_geospatial.sh")
