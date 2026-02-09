@@ -1,12 +1,7 @@
 # py-rocket-geospatial-2
 
-[![Report Issues](https://img.shields.io/badge/report%20issues-GitHub%20Issues-blue?logo=github)](https://github.com/nmfs-opensci/py-rocket-geospatial-2/issues) [![Build and Push](https://github.com/nmfs-opensci/py-rocket-geospatial-2/actions/workflows/build-and-push.yml/badge.svg)](https://github.com/nmfs-opensci/py-rocket-geospatial-2/actions/workflows/build-and-push.yml)
-[![ghcr.io](https://img.shields.io/badge/ghcr.io-container--images%2Fpy--rocket--geospatial--2-blue?logo=docker)](https://github.com/nmfs-opensci/container-images/pkgs/container/container-images%2Fpy-rocket-geospatial-2) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18557656.svg)](https://doi.org/10.5281/zenodo.18557656)   [![GitHub Release](https://img.shields.io/github/v/release/nmfs-opensci/py-rocket-geospatial-2)](https://github.com/nmfs-opensci/py-rocket-geospatial-2/releases)
-
-```bash
-docker pull ghcr.io/nmfs-opensci/container-images/py-rocket-geospatial-2:latest
-docker run -it --rm -p 8888:8888 ghcr.io/nmfs-opensci/container-images/py-rocket-geospatial-2:latest
-```
+[![Project Home](https://img.shields.io/badge/project-GitHub-blue?logo=github)](https://github.com/nmfs-opensci/py-rocket-geospatial-2) [![Report Issues](https://img.shields.io/badge/report%20issues-GitHub%20Issues-blue?logo=github)](https://github.com/nmfs-opensci/py-rocket-geospatial-2/issues) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18557656.svg)](https://doi.org/10.5281/zenodo.18557656)   [![GitHub Release](https://img.shields.io/github/v/release/nmfs-opensci/py-rocket-geospatial-2)](https://github.com/nmfs-opensci/py-rocket-geospatial-2/releases) <br> [![Build and Push](https://github.com/nmfs-opensci/py-rocket-geospatial-2/actions/workflows/build-and-push.yml/badge.svg)](https://github.com/nmfs-opensci/py-rocket-geospatial-2/actions/workflows/build-and-push.yml)
+[![ghcr.io](https://img.shields.io/badge/ghcr.io-container--images%2Fpy--rocket--geospatial--2-blue?logo=docker)](https://github.com/nmfs-opensci/container-images/pkgs/container/container-images%2Fpy-rocket-geospatial-2) 
 
 ---
 
@@ -48,6 +43,18 @@ The image also includes Quarto, TeX Live, MyST, and JupyterBook for scientific p
   - Conda environment `notebook`, activated on startup  
 - **R:** 4.5.x  
   - Shared across RStudio and JupyterLab  
+
+---
+
+## Using
+
+The image is designed to be used in JupyterHubs and you can use in your hub yaml with `ghcr.io/nmfs-opensci/container-images/py-rocket-geospatial-2:latest` but best practice is to pin to a specific tag. 
+
+You can also run on a computer with Docker installed with
+```bash
+docker pull ghcr.io/nmfs-opensci/container-images/py-rocket-geospatial-2:latest
+docker run -it --rm -p 8888:8888 ghcr.io/nmfs-opensci/container-images/py-rocket-geospatial-2:latest
+```
 
 ---
 
