@@ -1,6 +1,7 @@
 name: Zenodo Release
 
 on:
+  workflow_dispatch:
   release:
     types: [published]
 
