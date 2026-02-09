@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-Validate R packages from install.R and /rocker_scripts/install_geospatial.sh
-against packages-r-pinned.R.
+Validate R packages from install.R and rocker scripts against packages-r-pinned.R.
 
 This script:
 1. Extracts package names from install.R
 2. Extracts package names from /rocker_scripts/install_geospatial.sh (from container)
-3. Reads packages from packages-r-pinned.R
-4. Validates that all packages are present in the pinned file
-5. Appends results to build.log
+3. Extracts package names from /rocker_scripts/install_tidyverse.sh (from container)
+4. Reads packages from packages-r-pinned.R
+5. Validates that all packages are present in the pinned file
+6. Appends results to build.log
 """
 
 import sys
@@ -140,7 +140,7 @@ def read_pinned_packages(pinned_file: Path) -> Set[str]:
 
 def append_to_build_log(log_file: Path, success: bool, missing_packages: Set[str],
                        install_r_packages: Set[str], geospatial_packages: Set[str],
-                       total_expected: int, total_pinned: int):
+                       tidyverse_packages: Set[str], total_expected: int, total_pinned: int):
     """
     Append R package validation results to build.log.
     """
@@ -152,21 +152,23 @@ def append_to_build_log(log_file: Path, success: bool, missing_packages: Set[str
         
         f.write(f"Packages in install.R: {len(install_r_packages)}\n")
         f.write(f"Packages in /rocker_scripts/install_geospatial.sh: {len(geospatial_packages)}\n")
+        f.write(f"Packages in /rocker_scripts/install_tidyverse.sh: {len(tidyverse_packages)}\n")
         f.write(f"Total unique R packages expected: {total_expected}\n")
         f.write(f"Total packages in packages-r-pinned.R: {total_pinned}\n\n")
         
         if success:
             f.write("STATUS: SUCCESS\n")
             f.write("=" * 70 + "\n\n")
-            f.write("All R packages from install.R and install_geospatial.sh are\n")
-            f.write("present in packages-r-pinned.R.\n\n")
+            f.write("All R packages from install.R, install_geospatial.sh, and\n")
+            f.write("install_tidyverse.sh are present in packages-r-pinned.R.\n\n")
             f.write("The packages-r-pinned.R file contains all required packages\n")
-            f.write("from both the custom install.R and the rocker geospatial script.\n")
+            f.write("from the custom install.R and the rocker scripts.\n")
         else:
             f.write("STATUS: FAILED\n")
             f.write("=" * 70 + "\n\n")
-            f.write("The following R packages are specified in install.R or\n")
-            f.write("install_geospatial.sh but were NOT found in packages-r-pinned.R:\n\n")
+            f.write("The following R packages are specified in install.R,\n")
+            f.write("install_geospatial.sh, or install_tidyverse.sh but were NOT\n")
+            f.write("found in packages-r-pinned.R:\n\n")
             
             for pkg in sorted(missing_packages):
                 sources = []
@@ -174,6 +176,8 @@ def append_to_build_log(log_file: Path, success: bool, missing_packages: Set[str
                     sources.append("install.R")
                 if pkg in geospatial_packages:
                     sources.append("install_geospatial.sh")
+                if pkg in tidyverse_packages:
+                    sources.append("install_tidyverse.sh")
                 f.write(f"  - {pkg}\n")
                 f.write(f"    Found in: {', '.join(sources)}\n")
             
@@ -194,6 +198,10 @@ def main():
     pinned_file = repo_root / "packages-r-pinned.R"
     log_file = repo_root / "build.log"
     
+    # Temporary files created by workflow with rocker script content
+    geospatial_file = Path("/tmp/install_geospatial.sh")
+    tidyverse_file = Path("/tmp/install_tidyverse.sh")
+    
     # Check if required files exist
     if not install_r_path.exists():
         print(f"Error: {install_r_path} not found", file=sys.stderr)
@@ -208,19 +216,30 @@ def main():
     install_r_packages = parse_install_r(install_r_path)
     print(f"Found {len(install_r_packages)} packages in install.R")
     
-    # Read install_geospatial.sh content from stdin (will be provided by docker run)
-    print("\nReading install_geospatial.sh content from stdin...")
-    geospatial_content = sys.stdin.read()
-    
-    if not geospatial_content.strip():
-        print("Warning: No content received from stdin for install_geospatial.sh", file=sys.stderr)
-        geospatial_packages = set()
-    else:
+    # Read install_geospatial.sh content
+    print("\nReading install_geospatial.sh content...")
+    if geospatial_file.exists():
+        with open(geospatial_file, 'r') as f:
+            geospatial_content = f.read()
         geospatial_packages = parse_install_geospatial_content(geospatial_content)
         print(f"Found {len(geospatial_packages)} packages in install_geospatial.sh")
+    else:
+        print("Warning: install_geospatial.sh file not found", file=sys.stderr)
+        geospatial_packages = set()
+    
+    # Read install_tidyverse.sh content
+    print("\nReading install_tidyverse.sh content...")
+    if tidyverse_file.exists():
+        with open(tidyverse_file, 'r') as f:
+            tidyverse_content = f.read()
+        tidyverse_packages = parse_install_geospatial_content(tidyverse_content)  # Same parser works for both
+        print(f"Found {len(tidyverse_packages)} packages in install_tidyverse.sh")
+    else:
+        print("Warning: install_tidyverse.sh file not found", file=sys.stderr)
+        tidyverse_packages = set()
     
     # Combine all expected packages
-    all_expected_packages = install_r_packages | geospatial_packages
+    all_expected_packages = install_r_packages | geospatial_packages | tidyverse_packages
     print(f"\nTotal unique R packages expected: {len(all_expected_packages)}")
     
     # Read pinned packages
@@ -237,7 +256,7 @@ def main():
     # Append to build log
     print(f"\nAppending R validation results to {log_file.name}...")
     append_to_build_log(log_file, success, missing_packages,
-                       install_r_packages, geospatial_packages,
+                       install_r_packages, geospatial_packages, tidyverse_packages,
                        len(all_expected_packages), len(pinned_packages))
     
     # Print results

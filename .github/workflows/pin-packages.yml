@@ -73,9 +73,12 @@ jobs:
         run: |
           IMAGE=ghcr.io/nmfs-opensci/container-images/py-rocket-geospatial-2:latest
 
-          # Extract install_geospatial.sh content from the container and pass to validation script
-          docker run --rm "$IMAGE" cat /rocker_scripts/install_geospatial.sh | \
-            python .github/scripts/validate_r_packages.py
+          # Extract rocker scripts from the container to temporary files
+          docker run --rm "$IMAGE" cat /rocker_scripts/install_geospatial.sh > /tmp/install_geospatial.sh
+          docker run --rm "$IMAGE" cat /rocker_scripts/install_tidyverse.sh > /tmp/install_tidyverse.sh
+
+          # Run validation script
+          python .github/scripts/validate_r_packages.py
 
           echo "R package validation complete. Check build.log for results."
           cat build.log
@@ -104,8 +107,8 @@ jobs:
             cat > pr_body.txt << 'EOF'
           ## Package Validation: ✅ SUCCESS
 
-          All Python packages from env-*.yml files and all R packages from install.R
-          and install_geospatial.sh are present in the container image.
+          All Python packages from env-*.yml files and all R packages from install.R,
+          install_geospatial.sh, and install_tidyverse.sh are present in the container image.
 
           ### Changes
           - **packages-python-pinned.yaml**: Updated with packages from env files only (not all 900+ conda packages)

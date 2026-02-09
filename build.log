@@ -15,3 +15,34 @@ The pinned file now contains only the packages specified in env files,
 not all 900+ packages from the conda environment.
 
 ======================================================================
+
+
+======================================================================
+R Package Validation Report
+======================================================================
+
+Packages in install.R: 64
+Packages in /rocker_scripts/install_geospatial.sh: 8
+Packages in /rocker_scripts/install_tidyverse.sh: 17
+Total unique R packages expected: 88
+Total packages in packages-r-pinned.R: 419
+
+STATUS: FAILED
+======================================================================
+
+The following R packages are specified in install.R,
+install_geospatial.sh, or install_tidyverse.sh but were NOT
+found in packages-r-pinned.R:
+
+  - RandomFields
+    Found in: install_geospatial.sh
+
+Total missing packages: 1
+
+To resolve this issue:
+  1. Check if these packages failed to install in the container
+  2. Review the container build logs for errors
+  3. Fix any installation issues and rebuild the container
+  4. Re-run the pin-packages workflow to update packages-r-pinned.R
+
+======================================================================

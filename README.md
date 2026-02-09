@@ -49,7 +49,7 @@ The [Pin Package Versions workflow](.github/workflows/pin-packages.yml):
 - Extracts package versions from the published Docker image
 - **Filters Python packages** to only include those specified in env-*.yml files
 - **Validates Python packages** that all packages from env-*.yml files are present in the container
-- **Validates R packages** that all packages from install.R and /rocker_scripts/install_geospatial.sh are present in the container
+- **Validates R packages** that all packages from install.R, /rocker_scripts/install_geospatial.sh, and /rocker_scripts/install_tidyverse.sh are present in the container
 - Creates a PR with:
   - Updated pinned package files
   - build.log with validation results for both Python and R
