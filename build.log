@@ -2,12 +2,12 @@
 Python Package Validation Report
 ======================================================================
 
-Packages from pangeo-notebook feedstock: 7
-Packages from pangeo-dask feedstock: 3
+Packages from pangeo-notebook feedstock: 0
+Packages from pangeo-dask feedstock: 0
 Other packages from py-rocket-base: 0
-Total packages from py-rocket-base: 10
+Total packages from py-rocket-base: 0
 Total unique packages in env-*.yml files: 93
-Total packages in filtered packages-python-pinned.yaml: 103
+Total packages in filtered packages-python-pinned.yaml: 93
 
 STATUS: SUCCESS
 ======================================================================

@@ -1,17 +1,6 @@
-
-# Packages from pangeo-notebook feedstock
-dask-labextension=7.0.0=pyhd8ed1ab_1
-ipywidgets=8.1.8=pyhd8ed1ab_0
-jupyter-server-proxy=4.4.0=pyhd8ed1ab_1
-jupyterhub-singleuser=5.4.3=h22fd4b0_0
-jupyterlab=4.5.2=pyhd8ed1ab_0
-nbgitpuller=1.2.2=pyhd8ed1ab_0
-pangeo-dask=2026.01.21=hd8ed1ab_0
-
-# Packages from pangeo-dask feedstock
-dask=2026.1.1=pyhcf101f3_0
-dask-gateway=2025.4.0=pyha7f0ed4_2
-distributed=2026.1.1=pyhcf101f3_1
+# $ conda create --name <env> --file <this file>
+# platform: linux-64
+# created-by: conda 25.11.0
 
 # Packages from environment/env-*.yml files
 adlfs=2025.8.0=pyhd8ed1ab_0
