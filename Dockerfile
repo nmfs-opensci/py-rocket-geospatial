@@ -13,15 +13,15 @@ USER root
 # Install Zotero; must be run before apt since apt install zotero requires this script be run first
 RUN wget -qO- https://raw.githubusercontent.com/retorquere/zotero-deb/master/install.sh | bash
 
-# Copy the repo files into /tmp (env-*.yml, install.R, etc)
+# Copy the repo files into /tmp (environment/*.yml, install.R, etc)
 COPY . /tmp/
 
 # Update conda env sequentially to prevent hairy solve
-RUN /pyrocket_scripts/install-conda-packages.sh /tmp/env-core1.yml || (echo "install env-core1 failed" && exit 1)
-RUN /pyrocket_scripts/install-conda-packages.sh /tmp/env-core2.yml || (echo "install env-core2 failed" && exit 1)
-RUN /pyrocket_scripts/install-conda-packages.sh /tmp/env-geo.yml || (echo "install env-geo failed" && exit 1)
-RUN /pyrocket_scripts/install-conda-packages.sh /tmp/env-viz.yml || (echo "install env-viz failed" && exit 1)
-RUN /pyrocket_scripts/install-conda-packages.sh /tmp/env-qgis.yml || (echo "install env-qgis failed" && exit 1)
+RUN /pyrocket_scripts/install-conda-packages.sh /tmp/environment/env-core1.yml || (echo "install env-core1 failed" && exit 1)
+RUN /pyrocket_scripts/install-conda-packages.sh /tmp/environment/env-core2.yml || (echo "install env-core2 failed" && exit 1)
+RUN /pyrocket_scripts/install-conda-packages.sh /tmp/environment/env-geo.yml || (echo "install env-geo failed" && exit 1)
+RUN /pyrocket_scripts/install-conda-packages.sh /tmp/environment/env-viz.yml || (echo "install env-viz failed" && exit 1)
+RUN /pyrocket_scripts/install-conda-packages.sh /tmp/environment/env-qgis.yml || (echo "install env-qgis failed" && exit 1)
 RUN /pyrocket_scripts/install-apt-packages.sh /tmp/apt.txt || (echo "install-apt-packages.sh failed" && exit 1)
 RUN /pyrocket_scripts/install-desktop.sh /tmp/Desktop|| (echo "setup-desktop.sh failed" && exit 1)
 

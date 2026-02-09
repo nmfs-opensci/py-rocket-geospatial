@@ -16,7 +16,7 @@ TeXLive and Quarto are installed along with MyST and JupyterBook.
 
 Python 3.11 is installed with a conda environment called notebook that is activated on opening the container. R 4.5.X is installed and operates separate from the conda notebook environment (conda is not on the PATH when using R). R can be used from RStudio or JupyterLab and the same R environment is used.
 
-* [Python packages (source env files)](env-core1.yml)
+* [Python packages (source env files)](environment/env-core1.yml)
 * [R packages (source install file)](install.R)
 * [Pinned Python packages](packages-python-pinned.yaml) - Auto-generated list of all Python packages with pinned versions
 * [Pinned R packages](packages-r-pinned.R) - Auto-generated list of all R packages with pinned versions
@@ -29,7 +29,7 @@ Python 3.11 is installed with a conda environment called notebook that is activa
 
 ## Customizing py-rocket-geospatial-2
 
-* edit the Python packages here `env-*.yml`
+* edit the Python packages here `environment/env-*.yml`
 * edit the R packages here `install.R`
 * update the QGIS, CoastWatch Utilities, and Panoply installs here `Dockerfile`
 * update the systems installs here `apt.txt`
@@ -39,7 +39,7 @@ If the changes are core functionality, not scientific, put in an [issue in py-ro
 ### Package Pinning and Validation
 
 The repository automatically maintains pinned package versions with validation:
-- `packages-python-pinned.yaml` - Contains Python packages from env-*.yml files with exact versions (not all 900+ conda packages)
+- `packages-python-pinned.yaml` - Contains Python packages from environment/env-*.yml files with exact versions (not all 900+ conda packages)
 - `packages-r-pinned.R` - Contains all R packages from the site-library with exact versions
 - `build.log` - Validation report showing if all packages from env files and rocker scripts are present
 
@@ -47,8 +47,8 @@ The [Pin Package Versions workflow](.github/workflows/pin-packages.yml):
 - Runs automatically after each successful build
 - Can be manually triggered from the Actions tab
 - Extracts package versions from the published Docker image
-- **Filters Python packages** to only include those specified in env-*.yml files
-- **Validates Python packages** that all packages from env-*.yml files are present in the container
+- **Filters Python packages** to only include those specified in environment/env-*.yml files
+- **Validates Python packages** that all packages from environment/env-*.yml files are present in the container
 - **Validates R packages** that all packages from install.R, /rocker_scripts/install_geospatial.sh, and /rocker_scripts/install_tidyverse.sh are present in the container
 - Creates a PR with:
   - Updated pinned package files
@@ -73,7 +73,7 @@ FROM ghcr.io/nmfs-opensci/container-images/py-rocket-geospatial-2:2026.02.08
 USER root
 
 COPY . /tmp/
-RUN /pyrocket_scripts/install-conda-packages.sh /tmp/environment.yml || echo "install-conda-packages.sh failed" || true
+RUN /pyrocket_scripts/install-conda-packages.sh /tmp/your-environment.yml || echo "install-conda-packages.sh failed" || true
 RUN /pyrocket_scripts/install-r-packages.sh /tmp/install.R || echo "install-r-package.sh failed" || true
 RUN rm -rf /tmp/*
 
