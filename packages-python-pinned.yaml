@@ -2,6 +2,50 @@
 # platform: linux-64
 # created-by: conda 25.11.0
 
+# Packages from pangeo-notebook feedstock
+dask-labextension=7.0.0=pyhd8ed1ab_1
+ipywidgets=8.1.8=pyhd8ed1ab_0
+jupyter-server-proxy=4.4.0=pyhd8ed1ab_1
+jupyterhub-singleuser=5.4.3=h22fd4b0_0
+jupyterlab=4.5.2=pyhd8ed1ab_0
+nbgitpuller=1.2.2=pyhd8ed1ab_0
+pangeo-dask=2026.01.21=hd8ed1ab_0
+
+# Packages from pangeo-dask feedstock
+dask=2026.1.1=pyhcf101f3_0
+dask-gateway=2025.4.0=pyha7f0ed4_2
+distributed=2026.1.1=pyhcf101f3_1
+
+# Other packages from py-rocket-base environment.yaml
+code-server=4.98.0=h59d26c6_1
+conda-lock=4.0.0=pyha191276_0
+escapism=1.1.0=pyhd8ed1ab_0
+gh=2.86.0=h76a2195_0
+gh-scoped-creds=4.1=pyhd8ed1ab_0
+git=2.49.0=pl5321h59d505e_0
+jupyter-book=2.1.2=pyhcf101f3_0
+jupyter-offlinenotebook=0.3.2=pyh9692d8f_0
+jupyter-remote-desktop-proxy=3.0.1=pypi_0
+jupyter-resource-usage=1.2.0=pyhd8ed1ab_0
+jupyter-rsession-proxy=2.4.0=pyhd8ed1ab_0
+jupyter-sshd-proxy=0.3.0=pyhd8ed1ab_1
+jupyter-vscode-proxy=0.7=pyhcf101f3_0
+jupyterlab-favorites=3.4.0=pyhd8ed1ab_0
+jupyterlab-geojson=3.4.0=pyhd8ed1ab_1
+jupyterlab-git=0.51.4=pyhd8ed1ab_0
+jupyterlab-h5web=12.6.1=pyhd8ed1ab_0
+jupyterlab-myst=2.6.0=pyhd8ed1ab_0
+jupyterlab-open-url-parameter=0.3.0=pypi_0
+jupyterlab-quarto=0.3.5=pypi_0
+jupytext=1.19.1=pyhbbac1ac_0
+nbdime=4.0.3=pyhcf101f3_0
+ocl-icd-system=1.0.0=1
+pigz=2.8=h421ea60_2
+python-dotenv=0.20.0=pyhd8ed1ab_0
+sphinx=9.0.4=pyhd8ed1ab_0
+sphinxcontrib-bibtex=2.6.5=pyhd8ed1ab_0
+websockify=0.13.0=py311h49ec1c0_2
+
 # Packages from environment/env-*.yml files
 adlfs=2025.8.0=pyhd8ed1ab_0
 apng=0.3.4=pyhd8ed1ab_0

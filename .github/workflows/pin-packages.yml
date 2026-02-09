@@ -34,8 +34,9 @@ jobs:
 
       - name: Extract py-rocket-base environment.yaml
         run: |
-          docker run --rm ghcr.io/nmfs-opensci/container-images/py-rocket-geospatial-2:latest \
-            cat /srv/repo/environment.yml > base-environment.yaml
+          docker run --rm --entrypoint cat \
+            ghcr.io/nmfs-opensci/container-images/py-rocket-geospatial-2:latest \
+            /srv/repo/environment.yml > base-environment.yaml
           
           echo "Base environment.yaml extracted to base-environment.yaml"
           head -20 base-environment.yaml
