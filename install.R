@@ -32,6 +32,9 @@ list.of.packages <- c(
   "isdparser",
   "readHAC",
   "parsedate"
+  "tigris",
+  "mirai",
+  "zarr"
 )
 install.packages(list.of.packages, repos = repo)
 
