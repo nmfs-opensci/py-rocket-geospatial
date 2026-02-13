@@ -31,7 +31,7 @@ list.of.packages <- c(
   "geonames",
   "isdparser",
   "readHAC",
-  "parsedate"
+  "parsedate",
   "tigris",
   "mirai",
   "zarr"
