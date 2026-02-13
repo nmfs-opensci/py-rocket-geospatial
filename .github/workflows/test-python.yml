@@ -38,7 +38,7 @@ jobs:
           EARTHDATA_PASS: ${{ secrets.EARTHDATA_PASS }}
         run: |
           echo "machine urs.earthdata.nasa.gov login $EARTHDATA_USER password $EARTHDATA_PASS" > tests/.netrc
-          chmod 0644 tests/.netrc
+          chmod 0600 tests/.netrc
 
       - name: Run Python xarray test notebook
         run: |
@@ -46,7 +46,7 @@ jobs:
           docker run --rm \
             -v "$PWD/tests:/tests" \
             ghcr.io/nmfs-opensci/container-images/py-rocket-geospatial-2:latest \
-            bash -c "cp /tests/.netrc ~/.netrc && chmod 0600 ~/.netrc && jupyter nbconvert --to notebook --execute /tests/test-python-xarray.ipynb --output /tests/test-python-xarray-output.ipynb"
+            bash -c "set -e && cp /tests/.netrc ~/.netrc && chmod 0600 ~/.netrc && jupyter nbconvert --to notebook --execute /tests/test-python-xarray.ipynb --output /tests/test-python-xarray-output.ipynb"
           echo "✓ Notebook executed successfully"
 
       - name: Upload test results
