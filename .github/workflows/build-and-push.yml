@@ -120,7 +120,7 @@ jobs:
       - name: Configure NASA Earthdata Login
         continue-on-error: true
         env:
-          EARTHDATA_USER: ${{ secrets.EARTHDATA_USER}}
+          EARTHDATA_USER: ${{ secrets.EARTHDATA_USER }}
           EARTHDATA_PASS: ${{ secrets.EARTHDATA_PASS }}
         run: |
           echo "machine urs.earthdata.nasa.gov login $EARTHDATA_USER password $EARTHDATA_PASS" > tests/.netrc
@@ -250,9 +250,10 @@ jobs:
   push:
     runs-on: ubuntu-latest
     needs: [build, test-python, test-packages]
-    # Run if tests are skipped OR if both test jobs succeeded
+    # Run if build succeeded AND (tests are skipped OR both test jobs succeeded)
     if: |
       always() && 
+      needs.build.result == 'success' &&
       (needs.build.outputs.skip_tests == 'true' || 
        (needs.test-python.result == 'success' && needs.test-packages.result == 'success'))
     outputs:
@@ -311,6 +312,7 @@ jobs:
     # Only run if push succeeded and tests were not skipped
     if: |
       always() && 
+      needs.push.result == 'success' &&
       needs.push.outputs.image_pushed == 'true' &&
       needs.build.outputs.skip_tests == 'false'
     steps:
