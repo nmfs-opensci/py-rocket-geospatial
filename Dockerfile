@@ -5,7 +5,7 @@ LABEL org.opencontainers.image.author="eli.holmes@noaa.gov"
 LABEL org.opencontainers.image.source=https://github.com/nmfs-opensci/py-rocket-geospatial-2
 LABEL org.opencontainers.image.description="Geospatial Python (3.11) and R (4.5.1) image with Desktop (QGIS, Panoply, CWUtils)"
 LABEL org.opencontainers.image.licenses=Apache2.0
-LABEL org.opencontainers.image.version=2026.02.12
+LABEL org.opencontainers.image.version=2026.02.13
 
 ENV PROJ_LIB=/srv/conda/envs/notebook/share/proj
 
