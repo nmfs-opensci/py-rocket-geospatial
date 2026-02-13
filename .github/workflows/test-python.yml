@@ -40,6 +40,11 @@ jobs:
           echo "machine urs.earthdata.nasa.gov login $EARTHDATA_USER password $EARTHDATA_PASS" > tests/.netrc
           chmod 0600 tests/.netrc
 
+      - name: Make tests dir writable for jovyan (uid 1000)
+        run: |
+          sudo chown -R 1000:1000 tests
+          sudo chmod -R u+rwX tests
+
       - name: Run Python xarray test notebook
         run: |
           echo "Running test notebook..."
