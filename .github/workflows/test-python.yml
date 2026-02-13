@@ -44,6 +44,7 @@ jobs:
         run: |
           echo "Running test notebook..."
           docker run --rm \
+            -u "$(id -u):$(id -g)" \
             -v "$PWD/tests:/tests" \
             ghcr.io/nmfs-opensci/container-images/py-rocket-geospatial-2:latest \
             bash -c "set -e && cp /tests/.netrc ~/.netrc && chmod 0600 ~/.netrc && jupyter nbconvert --to notebook --execute /tests/test-python-xarray.ipynb --output /tests/test-python-xarray-output.ipynb"
