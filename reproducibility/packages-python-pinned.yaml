@@ -13,7 +13,7 @@ pangeo-dask=2026.01.21=hd8ed1ab_0
 
 # Packages from pangeo-dask feedstock
 dask=2026.1.1=pyhcf101f3_0
-dask-gateway=2025.4.0=pyha7f0ed4_2
+dask-gateway=2025.4.0=pyhcf101f3_2
 distributed=2026.1.1=pyhcf101f3_1
 
 # Other packages from py-rocket-base environment.yaml
@@ -38,7 +38,7 @@ jupyterlab-myst=2.6.0=pyhd8ed1ab_0
 jupyterlab-open-url-parameter=0.3.0=pypi_0
 jupyterlab-quarto=0.3.5=pypi_0
 jupytext=1.19.1=pyhbbac1ac_0
-nbdime=4.0.3=pyhcf101f3_0
+nbdime=4.0.4=pyhcf101f3_0
 ocl-icd-system=1.0.0=1
 pigz=2.8=h421ea60_2
 python-dotenv=0.20.0=pyhd8ed1ab_0
@@ -47,7 +47,7 @@ sphinxcontrib-bibtex=2.6.5=pyhd8ed1ab_0
 websockify=0.13.0=py311h49ec1c0_2
 
 # Packages from conda-env/env-*.yml files
-adlfs=2025.8.0=pyhd8ed1ab_0
+adlfs=2026.2.0=pyhd8ed1ab_0
 apng=0.3.4=pyhd8ed1ab_0
 awscliv2=2.3.1=pyhd8ed1ab_1
 bokeh=3.8.2=pyhd8ed1ab_0
@@ -68,7 +68,7 @@ earthaccess=0.16.0=pyhcf101f3_0
 erddapy=3.1.0=pyhd8ed1ab_0
 esmpy=8.8.1=pyhecae5ae_0
 fastparquet=2025.12.0=py311h0372a8f_0
-flox=0.11.0=pyhd8ed1ab_0
+flox=0.11.1=pyhd8ed1ab_0
 fsspec=2026.2.0=pyhd8ed1ab_0
 gcsfs=2026.2.0=pyhd8ed1ab_0
 geemap=0.37.1=pyhd8ed1ab_0
@@ -83,7 +83,7 @@ harmony-py=0.4.14=pyhd8ed1ab_0
 hdf5plugin=5.1.0=py311hf26c3c1_0
 holoviews=1.22.1=pyhd8ed1ab_0
 hvplot=0.12.2=pyhd8ed1ab_0
-hypothesis=6.151.5=pyha770c72_0
+hypothesis=6.151.6=pyha770c72_0
 imageio=2.37.0=pyhfb79c49_0
 intake=2.0.8=pyhd8ed1ab_0
 intake-erddap=0.5.2=pyhd8ed1ab_1
@@ -94,8 +94,8 @@ ipyleaflet=0.20.0=pyhd8ed1ab_0
 ipympl=0.10.0=pyhcf101f3_0
 joblib=1.5.3=pyhd8ed1ab_0
 kerchunk=0.2.9=pyhd8ed1ab_0
-leafmap=0.59.0=pyhd8ed1ab_0
-lonboard=0.13.0=pyhbbac1ac_0
+leafmap=0.60.0=pyhd8ed1ab_0
+lonboard=0.14.0=pyhbbac1ac_0
 lxml=6.0.2=py311hc53b721_0
 matplotlib=3.10.8=py311h38be061_0
 nco=5.3.3=h657489c_0
@@ -123,7 +123,7 @@ rasterstats=0.20.0=pyhd8ed1ab_2
 rechunker=0.5.2=pyhd8ed1ab_2
 regionmask=0.13.0=pyhd8ed1ab_0
 rioxarray=0.19.0=pyhd8ed1ab_0
-ruff=0.15.0=h40fa522_0
+ruff=0.15.1=h40fa522_0
 s3fs=2026.2.0=pyhd8ed1ab_1
 scikit-image=0.26.0=np2py311h2a99c40_0
 scikit-learn=1.8.0=np2py311ha15b03d_1

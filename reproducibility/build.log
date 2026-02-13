@@ -31,13 +31,13 @@ Not all 900+ packages from the conda environment are included.
 R Package Validation Report
 ======================================================================
 
-Packages in install.R: 64
+Packages in install.R: 66
 Packages in /rocker_scripts/install_geospatial.sh: 32
 Packages in /rocker_scripts/install_tidyverse.sh: 17
-Total unique R packages expected: 112
+Total unique R packages expected: 114
 Archived packages excluded from validation: 4
   (RandomFields, maptools, rgdal, rgeos)
-Total packages in packages-r-pinned.R: 418
+Total packages in packages-r-pinned.R: 421
 
 STATUS: SUCCESS
 ======================================================================
