@@ -33,6 +33,7 @@ jobs:
       image_name: ${{ steps.setup.outputs.full_name }}
       image_pushed: ${{ steps.push_check.outputs.pushed }}
       validation_status: ${{ steps.validation_status.outputs.status }}
+      tests_skipped: ${{ steps.check_skip.outputs.skip_tests }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -226,6 +227,7 @@ jobs:
       # ============================================================================
       - name: Push the Docker image
         id: push_image
+        if: env.SKIP_TESTS == 'true' || success()
         run: |
           docker push ghcr.io/${{ github.repository_owner }}/${{ env.name }}:${{ env.tag }}
           docker push ghcr.io/${{ github.repository_owner }}/${{ env.name }}:latest
@@ -239,16 +241,18 @@ jobs:
 
       - name: Set push status
         id: push_check
+        if: env.SKIP_TESTS == 'true' || success()
         run: |
           echo "pushed=true" >> $GITHUB_OUTPUT
 
   create-release-pr:
     runs-on: ubuntu-latest
     needs: build-test-push
-    # Only run if push succeeded and tests were not skipped
+    # Only run if push succeeded, tests were run (not skipped), and job succeeded
     if: |
       needs.build-test-push.outputs.image_pushed == 'true' &&
-      needs.build-test-push.result == 'success'
+      needs.build-test-push.result == 'success' &&
+      needs.build-test-push.outputs.tests_skipped == 'false'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
