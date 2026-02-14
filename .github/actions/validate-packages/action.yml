@@ -1,0 +1,98 @@
+name: Validate packages in container
+description: Extract pinned Python/R package lists from a Docker image and run repo validation scripts, producing reproducibility/build.log.
+
+inputs:
+  image:
+    description: Full image reference including tag (e.g. ghcr.io/org/repo/image:sha)
+    required: true
+  repo_root_mount:
+    description: Host repo mount path inside container (default: /repo)
+    required: false
+    default: /repo
+  python_version:
+    description: Python version for running validation scripts on the runner
+    required: false
+    default: "3.11"
+
+runs:
+  using: composite
+  steps:
+    - name: Ensure reproducibility directory exists
+      shell: bash
+      run: |
+        set -euo pipefail
+        mkdir -p reproducibility
+
+    - name: Extract base environment.yaml from container
+      shell: bash
+      run: |
+        set -euo pipefail
+        docker run --rm --entrypoint cat \
+          "${{ inputs.image }}" \
+          /srv/repo/environment.yml > base-environment.yaml
+        echo "Base environment.yaml extracted to base-environment.yaml"
+        head -20 base-environment.yaml || true
+
+    - name: Extract Python packages with pinned versions
+      shell: bash
+      run: |
+        set -euo pipefail
+        docker run --rm "${{ inputs.image }}" \
+          bash -lc 'conda list -n notebook --export' > reproducibility/packages-python-pinned.yaml
+        echo "Python packages extracted to reproducibility/packages-python-pinned.yaml"
+        head -20 reproducibility/packages-python-pinned.yaml || true
+
+    - name: Set up Python for validation
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python_version }}
+
+    - name: Install Python dependencies
+      shell: bash
+      run: |
+        set -euo pipefail
+        python -m pip install --upgrade pip
+        pip install pyyaml
+
+    - name: Filter and validate Python packages
+      shell: bash
+      run: |
+        set -euo pipefail
+        python .github/scripts/filter_and_validate_packages.py
+        echo "Validation complete. Check reproducibility/build.log for results."
+        test -f reproducibility/build.log && cat reproducibility/build.log || true
+
+    - name: Extract R packages with pinned versions
+      shell: bash
+      run: |
+        set -euo pipefail
+        docker run --rm \
+          -v "$PWD:${{ inputs.repo_root_mount }}" \
+          "${{ inputs.image }}" \
+          Rscript "${{ inputs.repo_root_mount }}/.github/scripts/extract_pins_r.R" /usr/local/lib/R/site-library \
+          > reproducibility/packages-r-pinned.R
+        echo "R packages extracted to reproducibility/packages-r-pinned.R"
+        head -30 reproducibility/packages-r-pinned.R || true
+
+    - name: Validate R packages
+      shell: bash
+      run: |
+        set -euo pipefail
+        docker run --rm "${{ inputs.image }}" cat /rocker_scripts/install_geospatial.sh > /tmp/install_geospatial.sh
+        docker run --rm "${{ inputs.image }}" cat /rocker_scripts/install_tidyverse.sh > /tmp/install_tidyverse.sh
+
+        python .github/scripts/validate_r_packages.py
+
+        echo "R package validation complete. Check reproducibility/build.log for results."
+        test -f reproducibility/build.log && cat reproducibility/build.log || true
+
+    - name: Compute validation status (writes to step summary)
+      shell: bash
+      run: |
+        set -euo pipefail
+        success_count=$(grep -c "STATUS: SUCCESS" reproducibility/build.log 2>/dev/null || true)
+        if [ "$success_count" -eq 2 ]; then
+          echo "✅ validation_status=success" | tee -a "$GITHUB_STEP_SUMMARY"
+        else
+          echo "⚠️ validation_status=failed" | tee -a "$GITHUB_STEP_SUMMARY"
+        fi
