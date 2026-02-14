@@ -29,7 +29,7 @@ jobs:
 
       - name: Pull the Docker image
         run: |
-          docker pull ghcr.io/nmfs-opensci/container-images/py-rocket-geospatial-2:latest
+          docker pull ghcr.io/${{ github.repository_owner }}/container-images/${{ github.event.repository.name }}:latest
 
       - name: Configure NASA Earthdata Login
         continue-on-error: true
@@ -50,7 +50,7 @@ jobs:
           echo "Running test notebook..."
           docker run --rm \
             -v "$PWD/tests:/tests" \
-            ghcr.io/nmfs-opensci/container-images/py-rocket-geospatial-2:latest \
+            ghcr.io/${{ github.repository_owner }}/container-images/${{ github.event.repository.name }}:latest \
             bash -c "set -e && cp /tests/.netrc ~/.netrc && chmod 0600 ~/.netrc && jupyter nbconvert --to notebook --execute /tests/test-python-xarray.ipynb --output /tests/test-python-xarray-output.ipynb"
           echo "✓ Notebook executed successfully"
 

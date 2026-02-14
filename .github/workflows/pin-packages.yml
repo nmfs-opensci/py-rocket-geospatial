@@ -30,12 +30,12 @@ jobs:
 
       - name: Pull the Docker image
         run: |
-          docker pull ghcr.io/nmfs-opensci/container-images/py-rocket-geospatial-2:latest
+          docker pull ghcr.io/${{ github.repository_owner }}/container-images/${{ github.event.repository.name }}:latest
 
       - name: Extract py-rocket-base environment.yaml
         run: |
           docker run --rm --entrypoint cat \
-            ghcr.io/nmfs-opensci/container-images/py-rocket-geospatial-2:latest \
+            ghcr.io/${{ github.repository_owner }}/container-images/${{ github.event.repository.name }}:latest \
             /srv/repo/environment.yml > base-environment.yaml
           
           echo "Base environment.yaml extracted to base-environment.yaml"
@@ -43,7 +43,7 @@ jobs:
 
       - name: Extract Python packages with pinned versions
         run: |
-          docker run --rm ghcr.io/nmfs-opensci/container-images/py-rocket-geospatial-2:latest \
+          docker run --rm ghcr.io/${{ github.repository_owner }}/container-images/${{ github.event.repository.name }}:latest \
             bash -c 'conda list -n notebook --export' > reproducibility/packages-python-pinned.yaml
 
           echo "Python packages extracted to reproducibility/packages-python-pinned.yaml"
@@ -67,7 +67,7 @@ jobs:
 
       - name: Extract R packages with pinned versions
         run: |
-          IMAGE=ghcr.io/nmfs-opensci/container-images/py-rocket-geospatial-2:latest
+          IMAGE=ghcr.io/${{ github.repository_owner }}/container-images/${{ github.event.repository.name }}:latest
 
           docker run --rm \
             -v "$PWD:/repo" \
@@ -80,7 +80,7 @@ jobs:
 
       - name: Validate R packages
         run: |
-          IMAGE=ghcr.io/nmfs-opensci/container-images/py-rocket-geospatial-2:latest
+          IMAGE=ghcr.io/${{ github.repository_owner }}/container-images/${{ github.event.repository.name }}:latest
 
           # Extract rocker scripts from the container to temporary files
           docker run --rm "$IMAGE" cat /rocker_scripts/install_geospatial.sh > /tmp/install_geospatial.sh

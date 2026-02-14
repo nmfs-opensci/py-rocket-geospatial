@@ -67,8 +67,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          echo "name=container-images/py-rocket-geospatial-2" >> $GITHUB_ENV
-          echo "full_name=ghcr.io/${{ github.repository_owner }}/container-images/py-rocket-geospatial-2" >> $GITHUB_OUTPUT
+          echo "name=container-images/${{ github.event.repository.name }}" >> $GITHUB_ENV
+          echo "full_name=ghcr.io/${{ github.repository_owner }}/container-images/${{ github.event.repository.name }}" >> $GITHUB_OUTPUT
 
           # Extract VERSION from Dockerfile (strip whitespace + quotes)
           if grep -q "LABEL org.opencontainers.image.version=" Dockerfile; then
@@ -93,7 +93,7 @@ jobs:
           echo "tag=${short_sha}" >> $GITHUB_ENV
           echo "tag=${short_sha}" >> $GITHUB_OUTPUT
 
-          echo "IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/container-images/py-rocket-geospatial-2:${short_sha}" >> $GITHUB_ENV
+          echo "IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/container-images/${{ github.event.repository.name }}:${short_sha}" >> $GITHUB_ENV
 
       - name: Build the Docker image
         run: |
