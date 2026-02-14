@@ -7,40 +7,40 @@ This document verifies that all acceptance criteria from the problem statement h
 ### ✅ Acceptance Criteria Met
 
 - [x] **Docker image is only pushed after both test jobs succeed (unless bypassed)**
-  - ✅ Implemented in `push` job with conditional: `needs.build.result == 'success' && (needs.build.outputs.skip_tests == 'true' || (needs.test-python.result == 'success' && needs.test-packages.result == 'success'))`
-  - ✅ Push job depends on `[build, test-python, test-packages]`
-  - ✅ Image artifact is saved in build job and loaded in push job only after tests pass
+  - ✅ Implemented as single job `build-test-push` with tests executed before push step
+  - ✅ Push step only executes if tests pass (or skip_tests=true)
+  - ✅ Image stays in Docker cache, avoiding artifact transfer overhead
 
 - [x] **`workflow_dispatch` includes `skip_tests` boolean input**
-  - ✅ Added to workflow_dispatch trigger in build-and-push.yml (lines 6-10)
+  - ✅ Added to workflow_dispatch trigger in build-and-push.yml
   - ✅ Type: boolean
   - ✅ Default: false
   - ✅ Description: "Skip tests and push image directly (for debugging image build issues)"
 
 - [x] **When `skip_tests: true`, image builds and pushes without testing**
-  - ✅ Test jobs check `if: ${{ needs.build.outputs.skip_tests == 'false' }}` (lines 104, 157)
-  - ✅ Push job runs when `skip_tests == 'true'` (line 257)
-  - ✅ Build job sets `skip_tests` output based on workflow_dispatch input (lines 39-46)
+  - ✅ Test steps check `if: env.SKIP_TESTS == 'false'`
+  - ✅ Push step always runs (after build), but tests are skipped when skip_tests=true
+  - ✅ Job sets SKIP_TESTS environment variable based on workflow_dispatch input
 
 - [x] **On successful push, a draft release OR release PR is automatically created**
-  - ✅ Implemented as `create-release-pr` job (lines 309-397)
+  - ✅ Implemented as `create-release-pr` job
   - ✅ Creates PR (not draft release) with peter-evans/create-pull-request action
   - ✅ PR includes pinned package versions and validation report
-  - ✅ Only runs when push succeeds: `needs.push.result == 'success'` (line 314)
+  - ✅ Only runs when main job succeeds
 
 - [x] **Release is tagged with Docker image version**
-  - ✅ PR title includes image tag: "Update pinned package versions - Build ${{ needs.build.outputs.image_tag }}"
-  - ✅ PR body includes Docker image information: "\`${{ needs.build.outputs.image_name }}:${{ needs.build.outputs.image_tag }}\`"
-  - ✅ Branch name includes tag: `ci/update-pins-${{ needs.build.outputs.image_tag }}`
+  - ✅ PR title includes image tag: "Update pinned package versions - Build ${{ needs.build-test-push.outputs.image_tag }}"
+  - ✅ PR body includes Docker image information
+  - ✅ Branch name includes tag: `ci/update-pins-${{ needs.build-test-push.outputs.image_tag }}`
 
 - [x] **All existing test functionality is preserved**
-  - ✅ Python notebook tests: Same steps as original test-python.yml (lines 114-144)
-  - ✅ Package validation: Same steps as original pin-packages.yml (lines 166-243)
+  - ✅ Python notebook tests: Same steps as original test-python.yml
+  - ✅ Package validation: Same steps as original pin-packages.yml
   - ✅ Original workflows still available for manual testing
 
 - [x] **Documentation updated explaining new workflow and bypass usage**
-  - ✅ README.md updated with "CI/CD Workflow" section (lines 85-133)
-  - ✅ Created WORKFLOW_DESIGN.md with comprehensive technical documentation
+  - ✅ README.md updated with "CI/CD Workflow" section
+  - ✅ WORKFLOW_DESIGN.md updated with single-job architecture
   - ✅ Documented skip_tests usage and when to use it
   - ✅ Documented workflow triggers and flow
 
@@ -49,54 +49,53 @@ This document verifies that all acceptance criteria from the problem statement h
   - ✅ Code review completed with all issues addressed
   - ✅ Security scan completed with no alerts
   - ✅ Conditional logic verified for all scenarios:
-    - Normal flow: build → test → push → PR
-    - Skip tests: build → push (no PR)
+    - Normal flow: build → test → push → PR (all in one job)
+    - Skip tests: build → push (no tests, no PR)
     - Test failure: build → test (fail) → no push
-    - Build failure: no downstream jobs
+    - Build failure: workflow fails immediately
 
 ## Technical Requirements Met
 
 ### ✅ Test Gating
-- [x] Docker image built without pushing (build job, lines 76-91)
-- [x] Python tests run against built image (test-python job, lines 99-144)
-- [x] Package validation runs against built image (test-packages job, lines 146-248)
-- [x] Push only occurs if both tests succeed (push job conditional, lines 254-258)
-- [x] Job dependencies properly configured with `needs:` keyword
+- [x] Docker image built without pushing (stays in Docker cache)
+- [x] Python tests run against built image in same job
+- [x] Package validation runs against built image in same job
+- [x] Push only occurs if tests succeed (or skip_tests=true)
+- [x] Single job eliminates artifact transfer overhead
 
 ### ✅ Bypass Mechanism
 - [x] `workflow_dispatch` input parameter `skip_tests` (boolean, default: false)
-- [x] Conditional job execution using `if: ${{ needs.build.outputs.skip_tests == 'false' }}`
+- [x] Conditional step execution using `if: env.SKIP_TESTS == 'false'`
 - [x] Documentation explains when bypass should be used
 
 ### ✅ Automated Release Creation
 - [x] PR created after successful image push
 - [x] PR tagged with Docker image tag
 - [x] Test results summary included in PR body
-- [x] PR assigned to @eeholmes (line 393)
+- [x] PR assigned to @eeholmes
 
 ### ✅ Implementation Approach
-- [x] Consolidated into build-and-push.yml with 5 jobs:
-  - `build` - Builds image and saves as artifact
-  - `test-python` - Tests Python functionality (needs: build)
-  - `test-packages` - Validates packages (needs: build)
-  - `push` - Pushes to GHCR (needs: [test-python, test-packages])
-  - `create-release-pr` - Creates PR (needs: push)
-- [x] Docker image shared via `docker save`/`docker load` artifacts
+- [x] Consolidated into build-and-push.yml with 2 jobs:
+  - `build-test-push` - Builds, tests, and pushes in one runner
+  - `create-release-pr` - Creates PR (needs: build-test-push)
+- [x] Docker image stays in runner's Docker cache (no artifact transfer)
+- [x] Small artifacts uploaded: test results, validation results (7-day retention)
 - [x] Individual test workflows available for manual triggers
 
 ### ✅ Technical Considerations
-- [x] **Image Sharing**: Using docker save/load with gzip compression (lines 87-96)
-- [x] **Conditional Execution**: Proper conditionals for skip_tests (lines 104, 157, 254-258, 312-316)
-- [x] **Release Tagging**: Docker image tag extracted and used (lines 72-74, 387)
+- [x] **Image Sharing**: Image stays in Docker cache, no save/load needed
+- [x] **Conditional Execution**: Proper conditionals for skip_tests using environment variables
+- [x] **Release Tagging**: Docker image tag extracted and used
 - [x] **Backward Compatibility**: Original workflows kept for manual use with updated triggers
+- [x] **Artifact Size**: Only small artifacts (~few MB) uploaded, avoiding 7GB image transfer
 
 ## Files Modified
 
-1. ✅ **`.github/workflows/build-and-push.yml`** - Complete restructure with 5-job pipeline
+1. ✅ **`.github/workflows/build-and-push.yml`** - Restructured to single-job pipeline (2 jobs total)
 2. ✅ **`.github/workflows/test-python.yml`** - Updated to manual-only trigger
 3. ✅ **`.github/workflows/pin-packages.yml`** - Updated to manual-only trigger
-4. ✅ **`README.md`** - Added CI/CD Workflow documentation section
-5. ✅ **`.github/workflows/WORKFLOW_DESIGN.md`** - Created comprehensive design docs
+4. ✅ **`README.md`** - Updated CI/CD Workflow documentation section
+5. ✅ **`.github/workflows/WORKFLOW_DESIGN.md`** - Updated with single-job architecture
 
 ## Code Quality
 

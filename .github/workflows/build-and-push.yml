@@ -26,12 +26,13 @@ permissions:
   pull-requests: write
 
 jobs:
-  build:
+  build-test-push:
     runs-on: ubuntu-latest
     outputs:
       image_tag: ${{ steps.setup.outputs.tag }}
       image_name: ${{ steps.setup.outputs.full_name }}
-      skip_tests: ${{ steps.check_skip.outputs.skip_tests }}
+      image_pushed: ${{ steps.push_check.outputs.pushed }}
+      validation_status: ${{ steps.validation_status.outputs.status }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -41,8 +42,10 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.skip_tests }}" = "true" ]; then
             echo "skip_tests=true" >> $GITHUB_OUTPUT
+            echo "SKIP_TESTS=true" >> $GITHUB_ENV
           else
             echo "skip_tests=false" >> $GITHUB_OUTPUT
+            echo "SKIP_TESTS=false" >> $GITHUB_ENV
           fi
 
       - name: Log in to GitHub Container Registry
@@ -72,6 +75,9 @@ jobs:
           short_sha=$(echo "${{ github.sha }}" | cut -c1-7)
           echo "tag=${short_sha}" >> $GITHUB_ENV
           echo "tag=${short_sha}" >> $GITHUB_OUTPUT
+          
+          # Set full image name for docker commands
+          echo "IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/container-images/py-rocket-geospatial-2:${short_sha}" >> $GITHUB_ENV
 
       - name: Build the Docker image
         run: |
@@ -87,37 +93,11 @@ jobs:
             docker tag ghcr.io/${{ github.repository_owner }}/${{ env.name }}:${{ env.tag }} ghcr.io/${{ github.repository_owner }}/${{ env.name }}:${{ env.version }}
           fi
 
-      - name: Save Docker image as artifact
-        run: |
-          docker save ghcr.io/${{ github.repository_owner }}/${{ env.name }}:${{ env.tag }} | gzip > /tmp/docker-image.tar.gz
-
-      - name: Upload Docker image artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: docker-image
-          path: /tmp/docker-image.tar.gz
-          retention-days: 1
-
-  test-python:
-    runs-on: ubuntu-latest
-    needs: build
-    # Only run if tests are not skipped
-    if: ${{ needs.build.outputs.skip_tests == 'false' }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Download Docker image artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: docker-image
-          path: /tmp
-
-      - name: Load Docker image
-        run: |
-          docker load < /tmp/docker-image.tar.gz
-
+      # ============================================================================
+      # TEST PYTHON NOTEBOOK
+      # ============================================================================
       - name: Configure NASA Earthdata Login
+        if: env.SKIP_TESTS == 'false'
         continue-on-error: true
         env:
           EARTHDATA_USER: ${{ secrets.EARTHDATA_USER }}
@@ -127,86 +107,77 @@ jobs:
           chmod 0600 tests/.netrc
 
       - name: Make tests dir writable for jovyan (uid 1000)
+        if: env.SKIP_TESTS == 'false'
         run: |
           sudo chown -R 1000:1000 tests
           sudo chmod -R u+rwX tests
 
       - name: Run Python xarray test notebook
+        if: env.SKIP_TESTS == 'false'
         run: |
           echo "Running test notebook..."
           docker run --rm \
             -v "$PWD/tests:/tests" \
-            ${{ needs.build.outputs.image_name }}:${{ needs.build.outputs.image_tag }} \
+            ${{ env.IMAGE_NAME }} \
             bash -c "set -e && cp /tests/.netrc ~/.netrc && chmod 0600 ~/.netrc && jupyter nbconvert --to notebook --execute /tests/test-python-xarray.ipynb --output /tests/test-python-xarray-output.ipynb"
           echo "✓ Notebook executed successfully"
 
       - name: Upload test results
-        if: always()
+        if: always() && env.SKIP_TESTS == 'false'
         uses: actions/upload-artifact@v4
         with:
           name: test-results
           path: tests/test-python-xarray-output.ipynb
           if-no-files-found: warn
+          retention-days: 7
 
-  test-packages:
-    runs-on: ubuntu-latest
-    needs: build
-    # Only run if tests are not skipped
-    if: ${{ needs.build.outputs.skip_tests == 'false' }}
-    outputs:
-      validation_status: ${{ steps.pr_body.outputs.status }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Download Docker image artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: docker-image
-          path: /tmp
-
-      - name: Load Docker image
-        run: |
-          docker load < /tmp/docker-image.tar.gz
-
+      # ============================================================================
+      # TEST PACKAGES / VALIDATION
+      # ============================================================================
       - name: Extract py-rocket-base environment.yaml
+        if: env.SKIP_TESTS == 'false'
         run: |
           docker run --rm --entrypoint cat \
-            ${{ needs.build.outputs.image_name }}:${{ needs.build.outputs.image_tag }} \
+            ${{ env.IMAGE_NAME }} \
             /srv/repo/environment.yml > base-environment.yaml
           
           echo "Base environment.yaml extracted to base-environment.yaml"
           head -20 base-environment.yaml
 
       - name: Extract Python packages with pinned versions
+        if: env.SKIP_TESTS == 'false'
         run: |
-          docker run --rm ${{ needs.build.outputs.image_name }}:${{ needs.build.outputs.image_tag }} \
+          docker run --rm ${{ env.IMAGE_NAME }} \
             bash -c 'conda list -n notebook --export' > reproducibility/packages-python-pinned.yaml
 
           echo "Python packages extracted to reproducibility/packages-python-pinned.yaml"
           head -20 reproducibility/packages-python-pinned.yaml
 
       - name: Set up Python for validation
+        if: env.SKIP_TESTS == 'false'
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
       - name: Install Python dependencies
+        if: env.SKIP_TESTS == 'false'
         run: |
           python -m pip install --upgrade pip
           pip install pyyaml
 
       - name: Filter and validate Python packages
+        if: env.SKIP_TESTS == 'false'
         run: |
           python .github/scripts/filter_and_validate_packages.py
           echo "Validation complete. Check reproducibility/build.log for results."
           cat reproducibility/build.log
 
       - name: Extract R packages with pinned versions
+        if: env.SKIP_TESTS == 'false'
         run: |
           docker run --rm \
             -v "$PWD:/repo" \
-            ${{ needs.build.outputs.image_name }}:${{ needs.build.outputs.image_tag }} \
+            ${{ env.IMAGE_NAME }} \
             Rscript /repo/.github/scripts/extract_pins_r.R /usr/local/lib/R/site-library \
             > reproducibility/packages-r-pinned.R
 
@@ -214,10 +185,11 @@ jobs:
           head -30 reproducibility/packages-r-pinned.R
 
       - name: Validate R packages
+        if: env.SKIP_TESTS == 'false'
         run: |
           # Extract rocker scripts from the container to temporary files
-          docker run --rm ${{ needs.build.outputs.image_name }}:${{ needs.build.outputs.image_tag }} cat /rocker_scripts/install_geospatial.sh > /tmp/install_geospatial.sh
-          docker run --rm ${{ needs.build.outputs.image_name }}:${{ needs.build.outputs.image_tag }} cat /rocker_scripts/install_tidyverse.sh > /tmp/install_tidyverse.sh
+          docker run --rm ${{ env.IMAGE_NAME }} cat /rocker_scripts/install_geospatial.sh > /tmp/install_geospatial.sh
+          docker run --rm ${{ env.IMAGE_NAME }} cat /rocker_scripts/install_tidyverse.sh > /tmp/install_tidyverse.sh
 
           # Run validation script
           python .github/scripts/validate_r_packages.py
@@ -226,7 +198,8 @@ jobs:
           cat reproducibility/build.log
 
       - name: Set validation status
-        id: pr_body
+        if: env.SKIP_TESTS == 'false'
+        id: validation_status
         run: |
           # Count SUCCESS statuses in reproducibility/build.log (should be 2: one for Python, one for R)
           success_count=$(grep -c "STATUS: SUCCESS" reproducibility/build.log || true)
@@ -238,7 +211,7 @@ jobs:
           fi
 
       - name: Upload validation results
-        if: always()
+        if: always() && env.SKIP_TESTS == 'false'
         uses: actions/upload-artifact@v4
         with:
           name: validation-results
@@ -246,75 +219,36 @@ jobs:
             reproducibility/packages-python-pinned.yaml
             reproducibility/packages-r-pinned.R
             reproducibility/build.log
+          retention-days: 7
 
-  push:
-    runs-on: ubuntu-latest
-    needs: [build, test-python, test-packages]
-    # Run if build succeeded AND (tests are skipped OR both test jobs succeeded)
-    if: |
-      always() && 
-      needs.build.result == 'success' &&
-      (needs.build.outputs.skip_tests == 'true' || 
-       (needs.test-python.result == 'success' && needs.test-packages.result == 'success'))
-    outputs:
-      image_pushed: ${{ steps.push_status.outputs.pushed }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Download Docker image artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: docker-image
-          path: /tmp
-
-      - name: Load Docker image
-        run: |
-          docker load < /tmp/docker-image.tar.gz
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract VERSION from Dockerfile
-        id: get_version
-        run: |
-          if grep -q "LABEL org.opencontainers.image.version=" Dockerfile; then
-            version=$(grep "LABEL org.opencontainers.image.version=" Dockerfile | cut -d '=' -f 2 | tr -d ' ')
-          elif grep -q "LABEL VERSION=" Dockerfile; then
-            version=$(grep "LABEL VERSION=" Dockerfile | cut -d '=' -f 2 | tr -d ' ')
-          else
-            version=""
-          fi
-          echo "version=${version}" >> $GITHUB_ENV
-
+      # ============================================================================
+      # PUSH IMAGE (only if tests passed or were skipped)
+      # ============================================================================
       - name: Push the Docker image
-        id: push_status
+        id: push_image
         run: |
-          docker push ${{ needs.build.outputs.image_name }}:${{ needs.build.outputs.image_tag }}
-          docker push ${{ needs.build.outputs.image_name }}:latest
+          docker push ghcr.io/${{ github.repository_owner }}/${{ env.name }}:${{ env.tag }}
+          docker push ghcr.io/${{ github.repository_owner }}/${{ env.name }}:latest
           
           # Push the version tag if it exists
           if [ -n "${{ env.version }}" ]; then
-            docker tag ${{ needs.build.outputs.image_name }}:${{ needs.build.outputs.image_tag }} ${{ needs.build.outputs.image_name }}:${{ env.version }}
-            docker push ${{ needs.build.outputs.image_name }}:${{ env.version }}
+            docker push ghcr.io/${{ github.repository_owner }}/${{ env.name }}:${{ env.version }}
           fi
           
-          echo "pushed=true" >> $GITHUB_OUTPUT
           echo "✓ Docker image pushed successfully"
+
+      - name: Set push status
+        id: push_check
+        run: |
+          echo "pushed=true" >> $GITHUB_OUTPUT
 
   create-release-pr:
     runs-on: ubuntu-latest
-    needs: [build, test-packages, push]
+    needs: build-test-push
     # Only run if push succeeded and tests were not skipped
     if: |
-      always() && 
-      needs.push.result == 'success' &&
-      needs.push.outputs.image_pushed == 'true' &&
-      needs.build.outputs.skip_tests == 'false'
+      needs.build-test-push.outputs.image_pushed == 'true' &&
+      needs.build-test-push.result == 'success'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -333,7 +267,7 @@ jobs:
           
           # Get test status
           test_status="✅ All tests passed"
-          if [ "${{ needs.test-packages.outputs.validation_status }}" != "success" ]; then
+          if [ "${{ needs.build-test-push.outputs.validation_status }}" != "success" ]; then
             test_status="⚠️ Package validation had warnings (see build.log)"
           fi
           
@@ -341,7 +275,7 @@ jobs:
             cat > reproducibility/pr_body.txt << EOF
           ## Package Validation: ✅ SUCCESS
           
-          **Docker Image:** \`${{ needs.build.outputs.image_name }}:${{ needs.build.outputs.image_tag }}\`
+          **Docker Image:** \`${{ needs.build-test-push.outputs.image_name }}:${{ needs.build-test-push.outputs.image_tag }}\`
           
           **Test Status:** ${test_status}
           
@@ -359,7 +293,7 @@ jobs:
             cat > reproducibility/pr_body.txt << EOF
           ## Package Validation: ⚠️ FAILED
           
-          **Docker Image:** \`${{ needs.build.outputs.image_name }}:${{ needs.build.outputs.image_tag }}\`
+          **Docker Image:** \`${{ needs.build-test-push.outputs.image_name }}:${{ needs.build-test-push.outputs.image_tag }}\`
           
           **Test Status:** ${test_status}
           
@@ -393,10 +327,10 @@ jobs:
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ci/update-pins-${{ needs.build.outputs.image_tag }}
+          branch: ci/update-pins-${{ needs.build-test-push.outputs.image_tag }}
           delete-branch: true
-          title: "Update pinned package versions - Build ${{ needs.build.outputs.image_tag }}"
+          title: "Update pinned package versions - Build ${{ needs.build-test-push.outputs.image_tag }}"
           body-path: reproducibility/pr_body.txt
           assignees: eeholmes
           reviewers: eeholmes
-          commit-message: "Update pinned package versions from container image ${{ needs.build.outputs.image_tag }}"
+          commit-message: "Update pinned package versions from container image ${{ needs.build-test-push.outputs.image_tag }}"

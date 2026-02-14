@@ -6,122 +6,75 @@ This document describes the restructured CI/CD workflow for py-rocket-geospatial
 
 ## Workflow Structure
 
-### Build → Test → Push → Release
+### Single Job: Build → Test → Push (in one runner)
 
 ```
-┌─────────┐
-│  build  │ Builds Docker image, saves as artifact
-└────┬────┘
-     │
-     ├─────────────────┬──────────────────┐
-     │                 │                  │
-     ▼                 ▼                  │
-┌──────────┐    ┌─────────────┐          │ (skip_tests=true)
-│test-     │    │test-        │          │
-│python    │    │packages     │          │
-└────┬─────┘    └──────┬──────┘          │
-     │                 │                  │
-     └────────┬────────┘                  │
-              ▼                           ▼
-         ┌────────┐◄──────────────────────┘
-         │  push  │ Pushes to GHCR only if tests pass
-         └───┬────┘
-             │
-             ▼
-    ┌────────────────┐
-    │create-release- │ Creates PR with pinned packages
-    │pr              │
-    └────────────────┘
+┌──────────────────────────────────────────────┐
+│         build-test-push (single job)         │
+│                                              │
+│  1. Build Docker image (tagged with SHA)    │
+│  2. Run Python notebook tests (optional)    │
+│  3. Run package validation (optional)       │
+│  4. Push image to GHCR (if tests pass)      │
+│                                              │
+│  (skip_tests=true bypasses steps 2-3)       │
+└─────────────────┬────────────────────────────┘
+                  │
+                  ▼
+         ┌────────────────┐
+         │create-release- │ Creates PR with pinned packages
+         │pr              │
+         └────────────────┘
 ```
+
+**Key Design Change**: Consolidated from 5 jobs to 2 jobs to avoid artifact transfer overhead. The Docker image (7GB+ compressed) stays in the build runner's local Docker cache, avoiding the need to save/load via artifacts.
 
 ## Job Details
 
-### 1. `build` Job
+### 1. `build-test-push` Job
 
-**Purpose**: Build the Docker image without pushing it
+**Purpose**: Build, test, and push the Docker image in a single job
 
 **Key Steps**:
 - Checkout code
 - Check if tests should be skipped (based on workflow_dispatch input)
-- Build Docker image with all required tags
-- Save image as artifact using `docker save`
-- Output image name, tag, and skip_tests flag
+- Log in to GHCR
+- Build Docker image with all required tags (stays in local Docker cache)
+- **Run Python notebook tests** (if skip_tests=false)
+- **Run package validation** (if skip_tests=false)
+- **Push image to GHCR** (always, but only after tests pass if not skipped)
+- Upload small artifacts (test results, validation results) with 7-day retention
 
 **Outputs**:
 - `image_tag`: Short SHA of the commit (e.g., "abc1234")
 - `image_name`: Full image name (e.g., "ghcr.io/nmfs-opensci/container-images/py-rocket-geospatial-2")
-- `skip_tests`: Boolean flag indicating if tests should be skipped
-
-### 2. `test-python` Job
-
-**Purpose**: Run Python notebook tests against the built image
-
-**Depends On**: `build`
-
-**Runs When**: `skip_tests == 'false'`
-
-**Key Steps**:
-- Download Docker image artifact
-- Load image using `docker load`
-- Configure NASA Earthdata credentials (if available)
-- Run test notebook in the container
-- Upload test results
-
-**Validation**: Notebook must execute successfully without errors
-
-### 3. `test-packages` Job
-
-**Purpose**: Validate all specified packages are installed in the image
-
-**Depends On**: `build`
-
-**Runs When**: `skip_tests == 'false'`
-
-**Key Steps**:
-- Download Docker image artifact
-- Load image
-- Extract Python and R package lists from the container
-- Validate against env-*.yml and install.R specifications
-- Generate validation report (build.log)
-
-**Outputs**:
+- `image_pushed`: "true" when push succeeds
 - `validation_status`: "success" if all packages found, "failed" otherwise
 
-**Validation**: All packages from:
-- `conda-env/env-*.yml` files
-- `install.R`
-- Rocker scripts (install_geospatial.sh, install_tidyverse.sh)
+**Test Execution** (if skip_tests=false):
+- Configure NASA Earthdata credentials (if available)
+- Run Python notebook test (test-python-xarray.ipynb)
+- Extract and validate Python packages from conda environment
+- Extract and validate R packages from site-library
+- Generate validation report (build.log)
 
-Must be present in the container.
+**Validation**: 
+- Notebook must execute successfully
+- All packages from env-*.yml, install.R, and Rocker scripts must be present
 
-### 4. `push` Job
+**Artifacts Uploaded** (7-day retention):
+- test-results: Executed notebook output
+- validation-results: Pinned packages and build.log
 
-**Purpose**: Push the Docker image to GitHub Container Registry
-
-**Depends On**: `build`, `test-python`, `test-packages`
-
-**Runs When**:
-- Tests are skipped (`skip_tests == 'true'`), OR
-- Both `test-python` AND `test-packages` succeeded
-
-**Key Steps**:
-- Download Docker image artifact
-- Load image
-- Log in to GHCR
-- Push image with all tags (short SHA, latest, version if available)
-
-**Outputs**:
-- `image_pushed`: "true" when push succeeds
-
-### 5. `create-release-pr` Job
+### 2. `create-release-pr` Job
 
 **Purpose**: Create a PR with pinned package versions and validation report
 
-**Depends On**: `build`, `test-packages`, `push`
+**Depends On**: `build-test-push`
 
 **Runs When**:
-- Push succeeded (`image_pushed == 'true'`)
-- Tests were NOT skipped (`skip_tests == 'false'`)
+- Main job succeeded (`result == 'success'`)
+- Image was pushed (`image_pushed == 'true'`)
 
 **Key Steps**:
 - Download validation results (packages-python-pinned.yaml, packages-r-pinned.R, build.log)
@@ -194,56 +147,61 @@ Release PR is created only when:
 
 ## Artifact Management
 
-**Docker Image Artifact**:
-- Created in `build` job using `docker save`
-- Compressed with gzip to reduce size
-- Uploaded with 1-day retention
-- Downloaded and loaded in subsequent jobs
+**Small Artifacts Only** (7-day retention):
+- test-results: Executed notebook output (~few MB)
+- validation-results: Pinned packages and build.log (~few MB)
 
-**Validation Results Artifact**:
-- Created in `test-packages` job
-- Contains: packages-python-pinned.yaml, packages-r-pinned.R, build.log
-- Downloaded in `create-release-pr` job
-- Included in the PR
+**No Docker Image Artifact**: The Docker image (~7GB compressed) stays in the build runner's local Docker cache. This avoids the need to save/load the image between jobs, which would be impractical for large images and could hit GitHub's artifact size limits.
 
 ## Error Handling
 
 ### Test Failures
 
-If either test job fails:
-- Push job will not run
+If any test step fails in the `build-test-push` job:
+- Push step will not execute (job fails before reaching it)
 - Image remains untagged and unpushed
 - Workflow fails, alerting maintainers
-- Artifacts are retained for debugging
+- Small artifacts (test results, validation) are retained for debugging
 
 ### Build Failures
 
-If build job fails:
-- No subsequent jobs run
-- No artifacts created
+If build step fails:
+- No test or push steps run
 - Workflow fails immediately
 
 ### Push Failures
 
-If push job fails (after successful tests):
+If push step fails (after successful tests):
 - Release PR job will not run
 - Workflow fails
 - May require manual intervention
 
-## Comparison with Old Workflow
+## Comparison with Previous Approaches
 
-### Old Flow (workflow_run triggers)
+### Original Flow (workflow_run triggers)
 ```
 Build & Push → (on completion) → Test Python
              → (on completion) → Pin Packages
 ```
 **Problem**: Image already pushed even if tests fail
 
-### New Flow (job dependencies)
+### Previous Multi-Job Flow (artifact transfer)
 ```
-Build → Test → Push (only if tests pass) → Release PR
+Build (save artifact) → Test (load artifact) → Push (load artifact)
 ```
-**Benefit**: Image only pushed if quality gates pass
+**Problem**: 7GB compressed image is too large for efficient artifact transfer
+
+### Current Flow (single job)
+```
+Build → Test → Push (all in one runner, image stays in Docker cache)
+         ↓
+    Release PR (separate job, uses small artifacts only)
+```
+**Benefit**: 
+- Image only pushed if quality gates pass
+- No artifact transfer overhead for large images
+- Simpler workflow with fewer jobs
+- More robust for huge container images
 
 ## Migration Notes
 
@@ -251,11 +209,11 @@ Build → Test → Push (only if tests pass) → Release PR
 - `test-python.yml` still available for manual testing of existing images
 - `pin-packages.yml` still available for manual package validation
 - Both now only trigger via `workflow_dispatch` (no longer automatic)
-- Main workflow is now `build-and-push.yml` with all steps integrated
+- Main workflow is now `build-and-push.yml` with all steps integrated in a single job
 
 **Breaking Changes**:
 - Test and pin-packages workflows no longer auto-trigger via `workflow_run`
-- If you were relying on automatic test runs after builds, update your process
+- Reduced from 5 jobs to 2 jobs for efficiency
 
 ## Future Enhancements
 

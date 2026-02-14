@@ -87,15 +87,18 @@ Pinned versions are extracted directly from the built image and validated agains
 
 ### Automated Build and Test Pipeline
 
-The repository uses a comprehensive CI/CD workflow that ensures quality before publishing Docker images:
+The repository uses a streamlined CI/CD workflow that ensures quality before publishing Docker images:
 
-**Workflow:** Build → Test → Push → Create Release PR
+**Workflow:** Build → Test → Push → Create Release PR (all in one job)
 
-1. **Build** - Docker image is built but not immediately pushed to registry
+The main `build-test-push` job executes:
+1. **Build** - Docker image is built and tagged (stays in runner's Docker cache)
 2. **Test Python** - Python notebook tests run against the built image
 3. **Test Packages** - Package validation ensures all specified packages are installed
-4. **Push** - Image is pushed to GHCR only if both test jobs succeed
-5. **Create Release PR** - A pull request is automatically created with pinned package versions
+4. **Push** - Image is pushed to GHCR only if tests pass
+5. **Create Release PR** - A separate job creates a pull request with pinned package versions
+
+**Design**: The Docker image (~7GB compressed) stays in the build runner's local Docker cache, avoiding artifact transfer overhead. Only small artifacts (test results, validation reports) are uploaded with 7-day retention.
 
 ### Manual Workflow Triggers
 
