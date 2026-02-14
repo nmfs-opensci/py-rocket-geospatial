@@ -1,42 +1,42 @@
 name: Run notebook tests in container
-description: Execute one or more Jupyter notebooks via nbconvert inside a Docker image (as jovyan), using a glob pattern. Writes output notebooks next to inputs.
+description: "Execute one or more Jupyter notebooks via nbconvert inside a Docker image (as jovyan), using a glob pattern. Writes output notebooks next to inputs."
 
 inputs:
   image:
-    description: Full image reference including tag (e.g. ghcr.io/org/repo/image:sha)
+    description: "Full image reference including tag (e.g. ghcr.io/org/repo/image:sha)"
     required: true
   tests_dir:
-    description: Host directory containing tests (default: tests)
+    description: "Host directory containing tests (default: tests)"
     required: false
-    default: tests
+    default: "tests"
   pattern:
-    description: Glob pattern (relative to tests_dir) of notebooks to execute (e.g. test-*.ipynb)
+    description: "Glob pattern (relative to tests_dir) of notebooks to execute (e.g. test-*.ipynb)"
     required: false
     default: "test-*.ipynb"
   exclude_pattern:
-    description: Glob pattern (relative to tests_dir) to exclude (e.g. *-output.ipynb)
+    description: "Glob pattern (relative to tests_dir) to exclude (e.g. *-output.ipynb)"
     required: false
     default: "*-output.ipynb"
   output_suffix:
-    description: Suffix inserted before .ipynb for outputs (default: -output)
+    description: "Suffix inserted before .ipynb for outputs (default: -output)"
     required: false
     default: "-output"
   fail_fast:
-    description: Stop on first failing notebook (true/false)
+    description: "Stop on first failing notebook (true/false)"
     required: false
     default: "true"
   earthdata_user:
-    description: NASA Earthdata username (optional)
+    description: "NASA Earthdata username (optional)"
     required: false
     default: ""
   earthdata_pass:
-    description: NASA Earthdata password (optional)
+    description: "NASA Earthdata password (optional)"
     required: false
     default: ""
   netrc_machine:
-    description: Machine entry for .netrc (default: urs.earthdata.nasa.gov)
+    description: "Machine entry for .netrc (default: urs.earthdata.nasa.gov)"
     required: false
-    default: urs.earthdata.nasa.gov
+    default: "urs.earthdata.nasa.gov"
 
 runs:
   using: composite
@@ -75,17 +75,14 @@ runs:
 
         cd "${TESTS_DIR}"
 
-        # Build list based on pattern, excluding outputs (and any exclude pattern)
         notebooks=( $PATTERN )
         if [ ${#notebooks[@]} -eq 0 ]; then
           echo "::error::No notebooks matched ${TESTS_DIR}/${PATTERN}"
           exit 1
         fi
 
-        # Apply exclusion
         filtered=()
         for nb in "${notebooks[@]}"; do
-          # Exclude by glob
           if [[ "$nb" == $EXCLUDE ]]; then
             continue
           fi
@@ -105,15 +102,10 @@ runs:
         for nb in "${filtered[@]}"; do
           base="${nb%.ipynb}"
           out="${base}${SUFFIX}.ipynb"
+
           echo "------------------------------------------------------------"
           echo "Running: ${TESTS_DIR}/${nb}"
           echo "Output:  ${TESTS_DIR}/${out}"
-
-          # Run inside container; mount tests dir at /tests
-          if ! docker run --rm \
-            -v "$PWD/.. /__dummy__" >/dev/null 2>&1; then
-            : # no-op; just to keep shellcheck calm (we don't use shellcheck here)
-          fi
 
           if ! docker run --rm \
             -v "$(pwd -P):/tests" \
